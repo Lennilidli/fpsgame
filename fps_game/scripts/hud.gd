@@ -30,6 +30,8 @@ const COLOR_THREAT_COVERED := Color(0.3, 1.0, 0.4)
 @onready var game_over_panel: Control = $GameOverPanel
 @onready var game_over_stats: Label = $GameOverPanel/Box/Stats
 @onready var combat_log: Label = $CombatLog
+@onready var score_label: Label = $ScoreLabel
+@onready var opponent_bar: ProgressBar = $OpponentBar
 @onready var arrows := {
 	MeleeCombat.Dir.OVERHEAD: $DirIndicator/Overhead,
 	MeleeCombat.Dir.THRUST: $DirIndicator/Thrust,
@@ -51,9 +53,11 @@ func _ready() -> void:
 	message_label.modulate.a = 0.0
 	result_label.modulate.a = 0.0
 	$PausePanel/Box/Resume.pressed.connect(_set_paused.bind(false))
-	$PausePanel/Box/Quit.pressed.connect(get_tree().quit)
+	$PausePanel/Box/Quit.pressed.connect(_quit)
 	$GameOverPanel/Box/Restart.pressed.connect(_restart)
-	$GameOverPanel/Box/Quit.pressed.connect(get_tree().quit)
+	$GameOverPanel/Box/Quit.pressed.connect(_quit)
+	score_label.hide()
+	opponent_bar.hide()
 	$PausePanel/Box/MainMenu.pressed.connect(_to_main_menu)
 	$GameOverPanel/Box/MainMenu.pressed.connect(_to_main_menu)
 	combat_log.hide()
@@ -80,9 +84,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _game_over:
 		return
 	if event.is_action_pressed("pause"):
-		_set_paused(not get_tree().paused)
+		_set_paused(not pause_panel.visible)
 		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed and not get_tree().paused and not _any_panel_open():
+	elif event is InputEventMouseButton and event.pressed and not pause_panel.visible and not _any_panel_open():
 		# Re-grab the mouse after alt-tabbing out of the window.
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -269,14 +273,49 @@ func _log(line: String) -> void:
 	combat_log.text = "\n".join(_log_lines)
 
 
+## PvP mode: score and opponent health, no wave info, fixed settings (no tuning
+## panels), no block hints, and Esc opens the menu without pausing the match.
+func enable_pvp() -> void:
+	wave_label.hide()
+	kills_label.hide()
+	score_label.show()
+	opponent_bar.show()
+	show_block_hints = false
+	$TuningPanel.set_target(null)
+	$TuningPanel.hide()
+	$ControlsLabel.text = $ControlsLabel.text.replace("\nF1 = combat tuning panel, F2 = training options", "")
+	$ControlsLabel.text = $ControlsLabel.text.replace("\nRed arrow = incoming attack, block there", "")
+	$PausePanel/Box/MainMenu.text = "Leave Match"
+
+
+func set_score(text: String) -> void:
+	score_label.text = text
+
+
+func set_opponent_health(current: float, maximum: float) -> void:
+	opponent_bar.max_value = maximum
+	opponent_bar.value = current
+
+
+func _quit() -> void:
+	if Net.active:
+		Net.leave()
+	get_tree().quit()
+
+
 func _to_main_menu() -> void:
+	if Net.active:
+		Net.leave("You left the match.")
+		return
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	get_tree().change_scene_to_file("res://scenes/menu.tscn")
 
 
 func _set_paused(paused: bool) -> void:
-	get_tree().paused = paused
+	# A network match keeps running; the menu only frees the mouse (which stops input).
+	if not Net.active:
+		get_tree().paused = paused
 	pause_panel.visible = paused
 	var free_mouse := paused or _any_panel_open()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if free_mouse else Input.MOUSE_MODE_CAPTURED

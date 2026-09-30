@@ -28,6 +28,11 @@ signal world_hit(point: Vector3)
 ## Emitted on the defender when it is struck.
 signal defended(result: Result, attacker: MeleeCombat)
 signal died
+## Emitted by the fighter that resolved a contact (the network host), with everything
+## needed to replay it elsewhere via apply_contact().
+signal contact_decided(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float)
+## Same for a swing glancing off level geometry (replay with apply_world_hit()).
+signal world_contact_decided(point: Vector3)
 
 const DIR_NAMES := ["overhead", "thrust", "left", "right"]
 
@@ -70,6 +75,9 @@ const HITBOX_SUBSTEPS := 4
 @export var hitbox_scale := 1.0
 @export var immortal := false ## Health refills instead of dying (training).
 @export var infinite_stamina := false
+## Whether this simulation detects hits. Off on a network guest: the host detects them
+## and sends the results, which are replayed with apply_contact()/apply_world_hit().
+var resolves_contacts := true
 
 @export_group("Stats")
 @export var max_health := 100.0
@@ -450,6 +458,30 @@ func _clear_queue() -> void:
 	_queued_age = 0.0
 
 
+## Switches which weapon node is animated and used as the hitbox.
+func set_weapon(new_weapon: Node3D, new_hitbox_scale: float) -> void:
+	weapon = new_weapon
+	hitbox_scale = new_hitbox_scale
+	_blade = weapon.get_node_or_null("Blade")
+	_anim_queue.clear()
+	_segment = {}
+	_snap_to(POSES["idle"])
+
+
+## Back to full health and stamina, standing in guard (new round).
+func reset() -> void:
+	health = max_health
+	stamina = max_stamina
+	_freeze = 0.0
+	_clear_queue()
+	_set_state(State.IDLE)
+	_anim_queue.clear()
+	_segment = {}
+	if weapon:
+		_snap_to(POSES["idle"])
+	emit_state()
+
+
 func heal(amount: float) -> void:
 	if is_dead():
 		return
@@ -461,36 +493,46 @@ func heal(amount: float) -> void:
 ## the blade struck this fighter's raised weapon, which always counts as a block;
 ## a body contact is still blocked if the guard faces the right direction.
 func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float, blade_contact := false) -> Result:
+	var result := decide_defense(attacker, dir, damage, blade_contact)
+	if result != Result.MISS:
+		apply_defense(attacker, result, damage)
+	return result
+
+
+## Works out what a contact does to this fighter, without changing anything.
+func decide_defense(attacker: MeleeCombat, dir: Dir, damage: float, blade_contact := false) -> Result:
 	if is_dead():
 		return Result.MISS
-
-	var impact := attacker.profile
 	var guarded := state == State.BLOCK and is_facing(attacker) \
 		and (blade_contact or block_dir == required_block(dir))
+	if not guarded:
+		return Result.HIT
+	if _block_time <= _t(profile.parry_window):
+		return Result.PARRIED
+	if not infinite_stamina and stamina - damage * profile.block_cost_ratio <= 0.0:
+		return Result.GUARD_BREAK
+	return Result.BLOCKED
 
-	var result: Result
+
+## Applies a decided contact to this fighter: stamina, damage, freeze, stagger.
+func apply_defense(attacker: MeleeCombat, result: Result, damage: float) -> void:
+	var impact := attacker.profile
 	last_block_age = _block_time if state == State.BLOCK else -1.0
-	if guarded:
-		if _block_time <= _t(profile.parry_window):
-			result = Result.PARRIED
-		else:
+	match result:
+		Result.BLOCKED:
 			_spend(damage * profile.block_cost_ratio)
 			_freeze = _t(impact.block_stop)
-			if stamina <= 0.0:
-				result = Result.GUARD_BREAK
-				_take_damage(damage * 0.5)
-				_stagger(profile.guard_break_stagger)
-			else:
-				result = Result.BLOCKED
-	else:
-		result = Result.HIT
-		_freeze = attacker.current_hit_stop() + attacker._t(impact.hit_bite_time)
-		_take_damage(damage)
-		if state != State.SWING:
-			_stagger(profile.flinch_time)
-
+		Result.GUARD_BREAK:
+			_spend(damage * profile.block_cost_ratio)
+			_freeze = _t(impact.block_stop)
+			_take_damage(damage * 0.5)
+			_stagger(profile.guard_break_stagger)
+		Result.HIT:
+			_freeze = attacker.current_hit_stop() + attacker._t(impact.hit_bite_time)
+			_take_damage(damage)
+			if state != State.SWING:
+				_stagger(profile.flinch_time)
 	defended.emit(result, attacker)
-	return result
 
 
 # --- State machine ---------------------------------------------------------
@@ -560,6 +602,8 @@ func _begin_swing() -> void:
 ## reacts to the first thing it touches: a raised guard, a body, or level geometry.
 ## Returns true if the swing was stopped.
 func _sweep_hitbox() -> bool:
+	if not resolves_contacts:
+		return false
 	var now := hitbox_segment()
 	var last: Array = _last_hitbox if not _last_hitbox.is_empty() else now
 	_last_hitbox = now
@@ -606,10 +650,19 @@ func _sweep_hitbox() -> bool:
 
 ## Resolves a contact. Returns true if the blade stops (bounce/stagger).
 func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3) -> bool:
-	var result := target.receive_attack(self, attack_dir, _swing_damage, blade_contact)
-	last_contact_blade = blade_contact
+	var result := target.decide_defense(self, attack_dir, _swing_damage, blade_contact)
 	if result == Result.MISS:
 		return false
+	contact_decided.emit(target, result, blade_contact, point, _swing_damage)
+	return apply_contact(target, result, blade_contact, point, _swing_damage)
+
+
+## Plays out a decided contact on both fighters. Returns true if the blade stops.
+## Also used by a network guest to replay contacts the host resolved.
+func apply_contact(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float) -> bool:
+	target.apply_defense(self, result, damage)
+	last_contact_blade = blade_contact
+	last_swing_damage = damage
 	_impact_done = true
 	attack_resolved.emit(result, target)
 	match result:
@@ -687,12 +740,18 @@ func _check_world_hit(last_tip: Vector3, tip: Vector3) -> bool:
 		hit = space.intersect_ray(PhysicsRayQueryParameters3D.create(last_tip, tip, 1))
 	if hit.is_empty():
 		return false
-	_impact_done = true
-	_spawn_spark(hit["position"])
-	_freeze = _t(profile.hit_stop)
-	world_hit.emit(hit["position"])
-	_bounce(profile.world_bounce_amount, profile.hit_bounce_time, 0.15)
+	world_contact_decided.emit(hit["position"])
+	apply_world_hit(hit["position"])
 	return true
+
+
+## Plays out a swing glancing off level geometry.
+func apply_world_hit(point: Vector3) -> void:
+	_impact_done = true
+	_spawn_spark(point)
+	_freeze = _t(profile.hit_stop)
+	world_hit.emit(point)
+	_bounce(profile.world_bounce_amount, profile.hit_bounce_time, 0.15)
 
 
 func _take_damage(amount: float) -> void:

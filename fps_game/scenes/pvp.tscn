@@ -1,0 +1,114 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/pvp.gd" id="1_pvp"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3_hud"]
+[ext_resource type="Shader" path="res://shaders/grid_floor.gdshader" id="4_grid"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.28, 0.36, 0.55, 1)
+sky_horizon_color = Color(0.65, 0.62, 0.6, 1)
+ground_bottom_color = Color(0.15, 0.14, 0.13, 1)
+ground_horizon_color = Color(0.65, 0.62, 0.6, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+
+[sub_resource type="ShaderMaterial" id="Mat_floor"]
+shader = ExtResource("4_grid")
+shader_parameter/base_color = Color(0.32, 0.29, 0.25, 1)
+shader_parameter/line_color = Color(0.42, 0.38, 0.32, 1)
+shader_parameter/cell_size = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_color = Color(0.5, 0.47, 0.43, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_stone"]
+albedo_color = Color(0.42, 0.46, 0.52, 1)
+roughness = 0.9
+
+[node name="Pvp" type="Node3D"]
+script = ExtResource("1_pvp")
+player_scene = ExtResource("2_player")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8192, -0.4699, 0.329, 0, 0.5736, 0.8192, -0.5736, -0.6711, 0.4699, 0, 10, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Level" type="Node3D" parent="."]
+
+[node name="Floor" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+use_collision = true
+size = Vector3(24, 1, 24)
+material = SubResource("Mat_floor")
+
+[node name="WallNorth" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -12.5)
+use_collision = true
+size = Vector3(26, 3, 1)
+material = SubResource("Mat_wall")
+
+[node name="WallSouth" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 12.5)
+use_collision = true
+size = Vector3(26, 3, 1)
+material = SubResource("Mat_wall")
+
+[node name="WallEast" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 1.5, 0)
+use_collision = true
+size = Vector3(1, 3, 24)
+material = SubResource("Mat_wall")
+
+[node name="WallWest" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.5, 1.5, 0)
+use_collision = true
+size = Vector3(1, 3, 24)
+material = SubResource("Mat_wall")
+
+[node name="PillarNE" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2, -6)
+use_collision = true
+size = Vector3(1.2, 4, 1.2)
+material = SubResource("Mat_stone")
+
+[node name="PillarNW" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 2, -6)
+use_collision = true
+size = Vector3(1.2, 4, 1.2)
+material = SubResource("Mat_stone")
+
+[node name="PillarSE" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2, 6)
+use_collision = true
+size = Vector3(1.2, 4, 1.2)
+material = SubResource("Mat_stone")
+
+[node name="PillarSW" type="CSGBox3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 2, 6)
+use_collision = true
+size = Vector3(1.2, 4, 1.2)
+material = SubResource("Mat_stone")
+
+[node name="SpawnHost" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 5)
+
+[node name="SpawnGuest" type="Marker3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.1, -5)
+
+[node name="Fighters" type="Node3D" parent="."]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
