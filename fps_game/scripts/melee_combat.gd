@@ -57,6 +57,8 @@ const BLADE_TIP := 0.95
 @export var team := 0
 @export var weapon: Node3D
 @export var glow_on_windup := false ## Make the blade glow while attacking (enemy telegraph).
+@export var immortal := false ## Health refills instead of dying (training).
+@export var infinite_stamina := false
 
 @export_group("Stats")
 @export var max_health := 100.0
@@ -71,6 +73,10 @@ var block_dir := Dir.OVERHEAD
 var body: Node3D
 ## Push applied by hits; bodies add this to their velocity.
 var knockback := Vector3.ZERO
+## Info about the most recent exchange, for training feedback.
+var last_swing_damage := 0.0
+var last_swing_charge := 0.0
+var last_block_age := -1.0 ## How long the block had been up when last hit (-1 if not blocking).
 
 var _timer := 0.0
 var _state_duration := 0.0
@@ -290,6 +296,7 @@ func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float) -> Result:
 	var facing := to_attacker.length() < 0.01 or _flat_forward().angle_to(to_attacker) < deg_to_rad(80.0)
 
 	var result: Result
+	last_block_age = _block_time if state == State.BLOCK else -1.0
 	if state == State.BLOCK and facing and block_dir == required_block(dir):
 		if _block_time <= _t(profile.parry_window):
 			result = Result.PARRIED
@@ -357,7 +364,9 @@ func _physics_process(delta: float) -> void:
 func _begin_swing() -> void:
 	var atk := profile.attack(attack_dir)
 	_spend(atk["stamina"])
-	_swing_damage = base_damage * atk["damage"] * lerpf(profile.charge_min_damage, 1.0, charge())
+	last_swing_charge = charge()
+	_swing_damage = base_damage * atk["damage"] * lerpf(profile.charge_min_damage, 1.0, last_swing_charge)
+	last_swing_damage = _swing_damage
 	_impact_done = false
 	_last_tip = Vector3.INF
 	_set_state(State.SWING)
@@ -483,6 +492,8 @@ func _check_world_hit() -> bool:
 
 func _take_damage(amount: float) -> void:
 	health = maxf(health - amount, 0.0)
+	if health <= 0.0 and immortal:
+		health = max_health
 	health_changed.emit(health, max_health)
 	if health <= 0.0:
 		_set_state(State.DEAD)
@@ -492,6 +503,8 @@ func _take_damage(amount: float) -> void:
 
 
 func _spend(amount: float) -> void:
+	if infinite_stamina:
+		return
 	stamina = maxf(stamina - amount, 0.0)
 	_regen_timer = profile.regen_delay
 	stamina_changed.emit(stamina, max_stamina)

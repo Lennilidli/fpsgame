@@ -1,0 +1,194 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/training.gd" id="1_training"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="4_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/training_dummy.tscn" id="5_dummy"]
+[ext_resource type="Shader" path="res://shaders/grid_floor.gdshader" id="6_grid"]
+[ext_resource type="NavigationMesh" path="res://scenes/training_navmesh.tres" id="7_navmesh"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.32, 0.46, 0.68, 1)
+sky_horizon_color = Color(0.7, 0.72, 0.75, 1)
+ground_bottom_color = Color(0.15, 0.14, 0.13, 1)
+ground_horizon_color = Color(0.7, 0.72, 0.75, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+
+[sub_resource type="ShaderMaterial" id="Mat_floor"]
+shader = ExtResource("6_grid")
+shader_parameter/base_color = Color(0.3, 0.31, 0.28, 1)
+shader_parameter/line_color = Color(0.44, 0.45, 0.4, 1)
+shader_parameter/cell_size = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_color = Color(0.55, 0.52, 0.48, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood"]
+albedo_color = Color(0.45, 0.3, 0.18, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_stone"]
+albedo_color = Color(0.42, 0.46, 0.52, 1)
+roughness = 0.9
+
+[node name="Training" type="Node3D"]
+script = ExtResource("1_training")
+enemy_scene = ExtResource("4_enemy")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8192, -0.4699, 0.329, 0, 0.5736, 0.8192, -0.5736, -0.6711, 0.4699, 0, 10, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = ExtResource("7_navmesh")
+
+[node name="Level" type="Node3D" parent="NavigationRegion3D"]
+
+[node name="Floor" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+use_collision = true
+size = Vector3(40, 1, 40)
+material = SubResource("Mat_floor")
+
+[node name="WallNorth" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -20.5)
+use_collision = true
+size = Vector3(42, 3, 1)
+material = SubResource("Mat_wall")
+
+[node name="WallSouth" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 20.5)
+use_collision = true
+size = Vector3(42, 3, 1)
+material = SubResource("Mat_wall")
+
+[node name="WallEast" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 1.5, 0)
+use_collision = true
+size = Vector3(1, 3, 40)
+material = SubResource("Mat_wall")
+
+[node name="WallWest" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.5, 1.5, 0)
+use_collision = true
+size = Vector3(1, 3, 40)
+material = SubResource("Mat_wall")
+
+[node name="WallTest" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.5, 6)
+use_collision = true
+size = Vector3(0.6, 3, 5)
+material = SubResource("Mat_stone")
+
+[node name="WallTestPillar" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 1.5, 6)
+use_collision = true
+size = Vector3(1, 3, 1)
+material = SubResource("Mat_stone")
+
+[node name="RingNorth" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, -16)
+use_collision = true
+size = Vector3(10, 0.4, 0.3)
+material = SubResource("Mat_wood")
+
+[node name="RingWest" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.2, -11.5)
+use_collision = true
+size = Vector3(0.3, 0.4, 9)
+material = SubResource("Mat_wood")
+
+[node name="RingEast" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.2, -11.5)
+use_collision = true
+size = Vector3(0.3, 0.4, 9)
+material = SubResource("Mat_wood")
+
+[node name="RingSouthLeft" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.2, -7)
+use_collision = true
+size = Vector3(3, 0.4, 0.3)
+material = SubResource("Mat_wood")
+
+[node name="RingSouthRight" type="CSGBox3D" parent="NavigationRegion3D/Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.2, -7)
+use_collision = true
+size = Vector3(3, 0.4, 0.3)
+material = SubResource("Mat_wood")
+
+[node name="Signs" type="Node3D" parent="."]
+
+[node name="PassiveSign" type="Label3D" parent="Signs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 3.5, -1.2)
+pixel_size = 0.006
+font_size = 64
+outline_size = 10
+text = "PASSIVE
+free hits"
+
+[node name="BlockerSign" type="Label3D" parent="Signs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, -1.2)
+pixel_size = 0.006
+font_size = 64
+outline_size = 10
+text = "BLOCKER
+attack around its guard"
+
+[node name="AttackerSign" type="Label3D" parent="Signs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3.5, -1.2)
+pixel_size = 0.006
+font_size = 64
+outline_size = 10
+text = "ATTACKER
+practice blocks and parries"
+
+[node name="WallSign" type="Label3D" parent="Signs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 3.3, 6)
+pixel_size = 0.006
+font_size = 64
+outline_size = 10
+text = "WALL TEST
+swing near the walls"
+
+[node name="RingSign" type="Label3D" parent="Signs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, -7)
+pixel_size = 0.006
+font_size = 64
+outline_size = 10
+text = "SPARRING RING
+F2: Sparring Enabled"
+
+[node name="PassiveDummy" parent="." instance=ExtResource("5_dummy")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -8, 0.1, 0)
+mode = 0
+
+[node name="BlockerDummy" parent="." instance=ExtResource("5_dummy")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.1, 0)
+mode = 1
+
+[node name="AttackerDummy" parent="." instance=ExtResource("5_dummy")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 0.1, 0)
+mode = 2
+
+[node name="SparringSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -13)
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 9)
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]

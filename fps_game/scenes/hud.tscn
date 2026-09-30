@@ -151,7 +151,7 @@ Hold RMB to block (block where the blade is)
 8 while winding up = feint to another direction
 RMB during a windup = cancel into block
 Red arrow = incoming attack, block there
-F1 = combat tuning panel"
+F1 = combat tuning panel, F2 = training options"
 horizontal_alignment = 2
 
 [node name="MessageLabel" type="Label" parent="."]
@@ -177,9 +177,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -140.0
-offset_top = -90.0
+offset_top = -120.0
 offset_right = 140.0
-offset_bottom = 90.0
+offset_bottom = 120.0
 theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="PausePanel/Box"]
@@ -191,6 +191,11 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(0, 44)
 theme_override_font_sizes/font_size = 20
 text = "Resume"
+
+[node name="MainMenu" type="Button" parent="PausePanel/Box"]
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 20
+text = "Main Menu"
 
 [node name="Quit" type="Button" parent="PausePanel/Box"]
 custom_minimum_size = Vector2(0, 44)
@@ -227,11 +232,36 @@ custom_minimum_size = Vector2(0, 44)
 theme_override_font_sizes/font_size = 20
 text = "Restart"
 
+[node name="MainMenu" type="Button" parent="GameOverPanel/Box"]
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 20
+text = "Main Menu"
+
 [node name="Quit" type="Button" parent="GameOverPanel/Box"]
 custom_minimum_size = Vector2(0, 44)
 theme_override_font_sizes/font_size = 20
 text = "Quit"
 
+[node name="CombatLog" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.85)
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -290.0
+offset_right = 624.0
+offset_bottom = -92.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+vertical_alignment = 2
+
 [node name="TuningPanel" type="Control" parent="."]
 script = ExtResource("2_tuning")
 profile = ExtResource("3_profile")
+
+[node name="TrainingPanel" type="Control" parent="."]
+script = ExtResource("2_tuning")
+title = "TRAINING OPTIONS"
+toggle_action = "toggle_training"
+dock_left = true
+show_time_scale = false

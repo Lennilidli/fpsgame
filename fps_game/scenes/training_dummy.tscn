@@ -1,0 +1,77 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/training_dummy.gd" id="1_dummy"]
+[ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
+[ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
+[ext_resource type="Resource" path="res://combat/sword_profile.tres" id="4_profile"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_straw"]
+albedo_color = Color(0.78, 0.66, 0.4, 1)
+roughness = 0.95
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+material = SubResource("Mat_straw")
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_mark"]
+albedo_color = Color(0.55, 0.12, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_face"]
+material = SubResource("Mat_mark")
+size = Vector3(0.3, 0.05, 0.05)
+
+[sub_resource type="StandardMaterial3D" id="Mat_post"]
+albedo_color = Color(0.35, 0.24, 0.14, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_base"]
+material = SubResource("Mat_post")
+top_radius = 0.45
+bottom_radius = 0.5
+height = 0.1
+
+[node name="TrainingDummy" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 7
+script = ExtResource("1_dummy")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_body")
+
+[node name="Face" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.38)
+mesh = SubResource("BoxMesh_face")
+
+[node name="Base" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("CylinderMesh_base")
+
+[node name="WeaponPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0)
+
+[node name="Sword" parent="WeaponPivot" instance=ExtResource("3_sword")]
+
+[node name="Feedback" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+billboard = 1
+no_depth_test = true
+font_size = 64
+outline_size = 12
+pixel_size = 0.004
+
+[node name="MeleeCombat" type="Node" parent="." node_paths=PackedStringArray("weapon")]
+script = ExtResource("2_combat")
+profile = ExtResource("4_profile")
+team = 1
+weapon = NodePath("../WeaponPivot/Sword")
+glow_on_windup = true
+base_damage = 22.0

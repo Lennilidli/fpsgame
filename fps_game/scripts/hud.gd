@@ -27,6 +27,7 @@ const COLOR_THREAT_COVERED := Color(0.3, 1.0, 0.4)
 @onready var pause_panel: Control = $PausePanel
 @onready var game_over_panel: Control = $GameOverPanel
 @onready var game_over_stats: Label = $GameOverPanel/Box/Stats
+@onready var combat_log: Label = $CombatLog
 @onready var arrows := {
 	MeleeCombat.Dir.OVERHEAD: $DirIndicator/Overhead,
 	MeleeCombat.Dir.THRUST: $DirIndicator/Thrust,
@@ -38,6 +39,7 @@ var _player: Node3D
 var _game_over := false
 var _message_tween: Tween
 var _result_tween: Tween
+var _log_lines: Array[String] = []
 
 
 func _ready() -> void:
@@ -50,10 +52,26 @@ func _ready() -> void:
 	$PausePanel/Box/Quit.pressed.connect(get_tree().quit)
 	$GameOverPanel/Box/Restart.pressed.connect(_restart)
 	$GameOverPanel/Box/Quit.pressed.connect(get_tree().quit)
+	$PausePanel/Box/MainMenu.pressed.connect(_to_main_menu)
+	$GameOverPanel/Box/MainMenu.pressed.connect(_to_main_menu)
+	combat_log.hide()
 
 
 func bind_player(player: Node3D) -> void:
 	_player = player
+
+
+## Training mode: hides wave info, enables the F2 options panel and the combat log.
+func enable_training(settings: Object) -> void:
+	wave_label.hide()
+	kills_label.hide()
+	combat_log.show()
+	$TrainingPanel.set_target(settings)
+	var combat: MeleeCombat = _player.combat
+	combat.attack_resolved.connect(_log_attack)
+	combat.defended.connect(_log_defense)
+	combat.world_hit.connect(func(_point): _log("Your %s glanced off the wall" % MeleeCombat.DIR_NAMES[combat.attack_dir]))
+	_log("F1 combat tuning  |  F2 training options")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -62,7 +80,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		_set_paused(not get_tree().paused)
 		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed and not get_tree().paused and not $TuningPanel.is_open():
+	elif event is InputEventMouseButton and event.pressed and not get_tree().paused and not _any_panel_open():
 		# Re-grab the mouse after alt-tabbing out of the window.
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -192,10 +210,67 @@ func _flash_damage() -> void:
 	create_tween().tween_property(damage_flash, "color:a", 0.0, 0.4)
 
 
+func _any_panel_open() -> bool:
+	for panel in get_tree().get_nodes_in_group("tuning_panels"):
+		if panel.visible:
+			return true
+	return false
+
+
+# --- Combat log (training) -------------------------------------------------
+
+func _log_attack(result: MeleeCombat.Result, _target: MeleeCombat) -> void:
+	var combat: MeleeCombat = _player.combat
+	var swing := "%s  charge %d%%" % [MeleeCombat.DIR_NAMES[combat.attack_dir].capitalize(), roundi(combat.last_swing_charge * 100.0)]
+	match result:
+		MeleeCombat.Result.MISS:
+			_log("%s  -> miss" % swing)
+		MeleeCombat.Result.HIT:
+			_log("%s  -> HIT %d dmg" % [swing, roundi(combat.last_swing_damage)])
+		MeleeCombat.Result.BLOCKED:
+			_log("%s  -> blocked" % swing)
+		MeleeCombat.Result.PARRIED:
+			_log("%s  -> PARRIED, you are staggered" % swing)
+		MeleeCombat.Result.GUARD_BREAK:
+			_log("%s  -> GUARD BREAK" % swing)
+
+
+func _log_defense(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
+	var combat: MeleeCombat = _player.combat
+	var incoming: String = MeleeCombat.DIR_NAMES[attacker.attack_dir].capitalize()
+	var needed: String = MeleeCombat.DIR_NAMES[MeleeCombat.required_block(attacker.attack_dir)]
+	var block_info := "block was up %d ms (parry window %d ms)" % [roundi(combat.last_block_age * 1000.0), roundi(combat._t(combat.profile.parry_window) * 1000.0)]
+	match result:
+		MeleeCombat.Result.HIT:
+			if combat.last_block_age >= 0.0:
+				_log("Enemy %s HIT you: you blocked %s, needed %s" % [incoming, MeleeCombat.DIR_NAMES[combat.block_dir], needed])
+			else:
+				_log("Enemy %s HIT you: no block (needed %s)" % [incoming, needed])
+		MeleeCombat.Result.BLOCKED:
+			_log("Blocked enemy %s: %s" % [incoming, block_info])
+		MeleeCombat.Result.PARRIED:
+			_log("PARRIED enemy %s: %s" % [incoming, block_info])
+		MeleeCombat.Result.GUARD_BREAK:
+			_log("Guard broken by enemy %s (out of stamina)" % incoming)
+
+
+func _log(line: String) -> void:
+	_log_lines.append(line)
+	if _log_lines.size() > 8:
+		_log_lines.pop_front()
+	combat_log.text = "\n".join(_log_lines)
+
+
+func _to_main_menu() -> void:
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	get_tree().change_scene_to_file("res://scenes/menu.tscn")
+
+
 func _set_paused(paused: bool) -> void:
 	get_tree().paused = paused
 	pause_panel.visible = paused
-	var free_mouse: bool = paused or $TuningPanel.is_open()
+	var free_mouse := paused or _any_panel_open()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if free_mouse else Input.MOUSE_MODE_CAPTURED
 
 
