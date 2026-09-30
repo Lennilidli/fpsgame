@@ -4,6 +4,8 @@
 [ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
 [ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
 [ext_resource type="Resource" path="res://combat/sword_profile.tres" id="4_profile"]
+[ext_resource type="Script" path="res://scripts/knight_rig.gd" id="5_knight"]
+[ext_resource type="Script" path="res://scripts/fp_arms.gd" id="6_arms"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -51,6 +53,16 @@ mesh = SubResource("BoxMesh_visor")
 [node name="WorldSword" parent="Head" instance=ExtResource("3_sword")]
 visible = false
 transform = Transform3D(1, 0, 0, 0, 2, 0, 0, 0, 1, 0.3, -0.35, -0.45)
+
+[node name="FPArms" type="Node3D" parent="Head/Camera3D" node_paths=PackedStringArray("weapon")]
+script = ExtResource("6_arms")
+weapon = NodePath("../Sword")
+
+[node name="KnightRig" type="Node3D" parent="." node_paths=PackedStringArray("weapon", "look_node")]
+visible = false
+script = ExtResource("5_knight")
+weapon = NodePath("../Head/WorldSword")
+look_node = NodePath("../Head")
 
 [node name="MeleeCombat" type="Node" parent="." node_paths=PackedStringArray("weapon")]
 script = ExtResource("2_combat")

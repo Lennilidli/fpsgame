@@ -1,0 +1,7 @@
+# Keep Godot text files (scenes, scripts, resources) in LF on every OS. CRLF line
+# endings leak into multi-line strings in .tscn files and show up as blank lines.
+* text=auto eol=lf
+*.jpg binary
+*.png binary
+*.fbx binary
+*.glb binary

@@ -1,49 +1,68 @@
 [gd_scene format=3]
 
-[sub_resource type="StandardMaterial3D" id="Mat_steel"]
-albedo_color = Color(0.78, 0.8, 0.84, 1)
-metallic = 0.9
-roughness = 0.25
+[ext_resource type="ArrayMesh" path="res://assets/sword/blade_mesh.tres" id="1_blade"]
+[ext_resource type="Material" path="res://assets/materials/blade_steel.tres" id="2_blade_mat"]
+[ext_resource type="Material" path="res://assets/materials/steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/leather.tres" id="4_leather"]
 
-[sub_resource type="StandardMaterial3D" id="Mat_leather"]
-albedo_color = Color(0.25, 0.15, 0.08, 1)
-roughness = 0.9
+[sub_resource type="CylinderMesh" id="Mesh_quillons"]
+material = ExtResource("3_steel")
+top_radius = 0.011
+bottom_radius = 0.011
+height = 0.22
+radial_segments = 10
 
-[sub_resource type="StandardMaterial3D" id="Mat_brass"]
-albedo_color = Color(0.7, 0.55, 0.25, 1)
-metallic = 0.8
-roughness = 0.35
+[sub_resource type="SphereMesh" id="Mesh_quillon_end"]
+material = ExtResource("3_steel")
+radius = 0.016
+height = 0.032
+radial_segments = 10
+rings = 6
 
-[sub_resource type="BoxMesh" id="Mesh_blade"]
-material = SubResource("Mat_steel")
-size = Vector3(0.05, 0.85, 0.012)
+[sub_resource type="BoxMesh" id="Mesh_guard_block"]
+material = ExtResource("3_steel")
+size = Vector3(0.05, 0.03, 0.028)
 
-[sub_resource type="BoxMesh" id="Mesh_guard"]
-material = SubResource("Mat_brass")
-size = Vector3(0.2, 0.035, 0.05)
+[sub_resource type="CylinderMesh" id="Mesh_grip"]
+material = ExtResource("4_leather")
+top_radius = 0.015
+bottom_radius = 0.017
+height = 0.2
+radial_segments = 12
 
-[sub_resource type="BoxMesh" id="Mesh_grip"]
-material = SubResource("Mat_leather")
-size = Vector3(0.035, 0.2, 0.035)
-
-[sub_resource type="BoxMesh" id="Mesh_pommel"]
-material = SubResource("Mat_brass")
-size = Vector3(0.05, 0.05, 0.05)
+[sub_resource type="CylinderMesh" id="Mesh_pommel"]
+material = ExtResource("3_steel")
+top_radius = 0.028
+bottom_radius = 0.028
+height = 0.022
+radial_segments = 16
 
 [node name="Sword" type="Node3D"]
 
 [node name="Blade" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.53, 0)
-mesh = SubResource("Mesh_blade")
+mesh = ExtResource("1_blade")
+surface_material_override/0 = ExtResource("2_blade_mat")
 
 [node name="Guard" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
-mesh = SubResource("Mesh_guard")
+mesh = SubResource("Mesh_guard_block")
+
+[node name="Quillons" type="MeshInstance3D" parent="Guard"]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Mesh_quillons")
+
+[node name="QuillonEndL" type="MeshInstance3D" parent="Guard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.11, 0.004, 0)
+mesh = SubResource("Mesh_quillon_end")
+
+[node name="QuillonEndR" type="MeshInstance3D" parent="Guard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11, 0.004, 0)
+mesh = SubResource("Mesh_quillon_end")
 
 [node name="Grip" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.025, 0)
 mesh = SubResource("Mesh_grip")
 
 [node name="Pommel" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0)
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, -0.14, 0)
 mesh = SubResource("Mesh_pommel")

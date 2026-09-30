@@ -23,12 +23,12 @@ var target: Node3D
 @onready var body_mesh: MeshInstance3D = $Body
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var combat: MeleeCombat = $MeleeCombat
+@onready var rig: KnightRig = $KnightRig
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _target_combat: MeleeCombat
 var _material: StandardMaterial3D
 var _base_color: Color
-var _react_tween: Tween
 var _repath_timer := 0.0
 var _strafe_sign := 1.0
 var _strafe_timer := 0.0
@@ -246,21 +246,13 @@ func _on_defended(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
 	if result == MeleeCombat.Result.HIT or result == MeleeCombat.Result.GUARD_BREAK:
 		_material.albedo_color = Color.WHITE
 		create_tween().tween_property(_material, "albedo_color", _base_color, 0.15)
-		if _react_tween:
-			_react_tween.kill()
-		_react_tween = MeleeCombat.play_hit_react(body_mesh, attacker.attack_dir, clampf(attacker.last_swing_damage / 30.0, 0.6, 1.5))
+		rig.hit_react(attacker.attack_dir, clampf(attacker.last_swing_damage / 30.0, 0.6, 1.5))
 
 
 func _on_died() -> void:
-	if _react_tween:
-		_react_tween.kill()
-	body_mesh.rotation = Vector3.ZERO
 	velocity = Vector3.ZERO
 	collision_shape.set_deferred("disabled", true)
 	died.emit(self)
 	$WeaponPivot.hide()
-	var tween := create_tween().set_parallel()
-	tween.tween_property(body_mesh, "scale", Vector3(1.3, 0.05, 1.3), 0.25)
-	tween.tween_property(body_mesh, "position:y", 0.05, 0.25)
-	tween.chain().tween_interval(0.5)
-	tween.chain().tween_callback(queue_free)
+	rig.collapse()
+	get_tree().create_timer(2.5).timeout.connect(queue_free)

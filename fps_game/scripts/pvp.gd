@@ -59,7 +59,7 @@ func _ready() -> void:
 	_update_score()
 	hud.show_message("WAITING FOR OPPONENT...")
 
-	if not Net.is_host:
+	if Net.active and not Net.is_host:
 		_guest_loaded.rpc_id(1)
 
 

@@ -6,6 +6,10 @@
 [ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="4_enemy"]
 [ext_resource type="Shader" path="res://shaders/grid_floor.gdshader" id="5_grid"]
 [ext_resource type="NavigationMesh" path="res://scenes/arena_navmesh.tres" id="6_navmesh"]
+[ext_resource type="Material" path="res://assets/materials/ground.tres" id="mat_ground"]
+[ext_resource type="Material" path="res://assets/materials/stone_wall.tres" id="mat_stone"]
+[ext_resource type="Material" path="res://assets/materials/planks.tres" id="mat_planks"]
+[ext_resource type="Environment" path="res://assets/sky/environment.tres" id="env_hdri"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.32, 0.46, 0.68, 1)
@@ -46,7 +50,7 @@ script = ExtResource("1_main")
 enemy_scene = ExtResource("4_enemy")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Env")
+environment = ExtResource("env_hdri")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.8192, -0.4699, 0.329, 0, 0.5736, 0.8192, -0.5736, -0.6711, 0.4699, 0, 10, 0)
@@ -62,103 +66,103 @@ navigation_mesh = ExtResource("6_navmesh")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 use_collision = true
 size = Vector3(60, 1, 60)
-material = SubResource("Mat_floor")
+material = ExtResource("mat_ground")
 
 [node name="WallNorth" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -30.5)
 use_collision = true
 size = Vector3(62, 4, 1)
-material = SubResource("Mat_wall")
+material = ExtResource("mat_stone")
 
 [node name="WallSouth" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 30.5)
 use_collision = true
 size = Vector3(62, 4, 1)
-material = SubResource("Mat_wall")
+material = ExtResource("mat_stone")
 
 [node name="WallEast" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 2, 0)
 use_collision = true
 size = Vector3(1, 4, 60)
-material = SubResource("Mat_wall")
+material = ExtResource("mat_stone")
 
 [node name="WallWest" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30.5, 2, 0)
 use_collision = true
 size = Vector3(1, 4, 60)
-material = SubResource("Mat_wall")
+material = ExtResource("mat_stone")
 
 [node name="Platform" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1, -15)
 use_collision = true
 size = Vector3(10, 2, 10)
-material = SubResource("Mat_concrete")
+material = ExtResource("mat_stone")
 
 [node name="Ramp" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 0.9487, -0.3162, 0, 0.3162, 0.9487, -15, 0.86, -7)
 use_collision = true
 size = Vector3(4, 0.3, 6.4)
-material = SubResource("Mat_concrete")
+material = ExtResource("mat_stone")
 
 [node name="Crate1" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1, 4)
 use_collision = true
 size = Vector3(2, 2, 2)
-material = SubResource("Mat_crate")
+material = ExtResource("mat_planks")
 
 [node name="Crate2" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1, 8)
 use_collision = true
 size = Vector3(2, 2, 2)
-material = SubResource("Mat_crate")
+material = ExtResource("mat_planks")
 
 [node name="Crate3" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1, -6)
 use_collision = true
 size = Vector3(2, 2, 2)
-material = SubResource("Mat_crate")
+material = ExtResource("mat_planks")
 
 [node name="Crate4" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1, 12)
 use_collision = true
 size = Vector3(2, 2, 2)
-material = SubResource("Mat_crate")
+material = ExtResource("mat_planks")
 
 [node name="Crate4Top" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 12)
 use_collision = true
 size = Vector3(2, 2, 2)
-material = SubResource("Mat_crate")
+material = ExtResource("mat_planks")
 
 [node name="LowCrate" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.375, -10)
 use_collision = true
 size = Vector3(1.5, 0.75, 1.5)
-material = SubResource("Mat_crate")
+material = ExtResource("mat_planks")
 
 [node name="CoverWall" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 12)
 use_collision = true
 size = Vector3(8, 1.2, 0.6)
-material = SubResource("Mat_concrete")
+material = ExtResource("mat_stone")
 
 [node name="Pillar1" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2.5, -15)
 use_collision = true
 size = Vector3(1.5, 5, 1.5)
-material = SubResource("Mat_concrete")
+material = ExtResource("mat_stone")
 
 [node name="Pillar2" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.5, 15)
 use_collision = true
 size = Vector3(1.5, 5, 1.5)
-material = SubResource("Mat_concrete")
+material = ExtResource("mat_stone")
 
 [node name="Pillar3" type="CSGBox3D" parent="NavigationRegion3D/Level"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, 5)
 use_collision = true
 size = Vector3(1.5, 5, 1.5)
-material = SubResource("Mat_concrete")
+material = ExtResource("mat_stone")
 
 [node name="SpawnPoints" type="Node3D" parent="."]
 

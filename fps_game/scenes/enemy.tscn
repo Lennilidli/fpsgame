@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
 [ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
 [ext_resource type="Resource" path="res://combat/sword_profile.tres" id="4_profile"]
+[ext_resource type="Script" path="res://scripts/knight_rig.gd" id="5_knight"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -38,6 +39,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_body")
 
 [node name="Body" type="MeshInstance3D" parent="."]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("CapsuleMesh_body")
 
@@ -53,6 +55,10 @@ mesh = SubResource("BoxMesh_eye")
 transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 1.45, 0)
 
 [node name="Sword" parent="WeaponPivot" instance=ExtResource("3_sword")]
+
+[node name="KnightRig" type="Node3D" parent="." node_paths=PackedStringArray("weapon")]
+script = ExtResource("5_knight")
+weapon = NodePath("../WeaponPivot/Sword")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 path_desired_distance = 0.6

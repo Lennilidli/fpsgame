@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/Chainmail002/Color.jpg" id="1_color"]
+[ext_resource type="Texture2D" path="res://assets/textures/Chainmail002/NormalGL.jpg" id="2_normal"]
+[ext_resource type="Texture2D" path="res://assets/textures/Chainmail002/Roughness.jpg" id="3_rough"]
+[ext_resource type="Texture2D" path="res://assets/textures/Chainmail002/Metalness.jpg" id="4_metal"]
+
+[resource]
+albedo_texture = ExtResource("1_color")
+metallic = 1.0
+metallic_texture = ExtResource("4_metal")
+roughness_texture = ExtResource("3_rough")
+normal_enabled = true
+normal_texture = ExtResource("2_normal")
+uv1_scale = Vector3(6.0, 6.0, 6.0)
+uv1_triplanar = true
+texture_filter = 5

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/Leather030/Color.jpg" id="1_color"]
+[ext_resource type="Texture2D" path="res://assets/textures/Leather030/NormalGL.jpg" id="2_normal"]
+[ext_resource type="Texture2D" path="res://assets/textures/Leather030/Roughness.jpg" id="3_rough"]
+
+[resource]
+albedo_texture = ExtResource("1_color")
+roughness_texture = ExtResource("3_rough")
+normal_enabled = true
+normal_texture = ExtResource("2_normal")
+uv1_scale = Vector3(3.0, 3.0, 3.0)
+uv1_triplanar = true
+texture_filter = 5

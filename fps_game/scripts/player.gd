@@ -191,8 +191,14 @@ func _update_intended_dir() -> void:
 func _setup_remote() -> void:
 	camera.current = false
 	$Head/Camera3D/Sword.hide()
-	$Body.show()
+	$KnightRig.show()
+	$Head/Visor.hide()
 	$Head/WorldSword.show()
+	$Head/Camera3D/FPArms.hide()
+	combat.died.connect($KnightRig.collapse)
+	combat.defended.connect(func(result, attacker) -> void:
+		if result == MeleeCombat.Result.HIT or result == MeleeCombat.Result.GUARD_BREAK:
+			$KnightRig.hit_react(attacker.attack_dir, clampf(attacker.last_swing_damage / 30.0, 0.6, 1.5)))
 	# The world sword is stretched along the blade by the same factor as the owner's
 	# first-person hitbox, so the blade you see is exactly the blade that can hit you.
 	combat.set_weapon($Head/WorldSword, 1.0)
@@ -216,6 +222,7 @@ func _follow_network_state(delta: float) -> void:
 ## Puts the fighter back at a spawn point with full health (new round).
 func reset_for_round(spawn: Transform3D) -> void:
 	combat.reset()
+	$KnightRig.revive()
 	global_transform = spawn
 	velocity = Vector3.ZERO
 	head.rotation.x = 0.0
@@ -230,6 +237,7 @@ func set_body_color(color: Color) -> void:
 	material.albedo_color = color
 	material.roughness = 0.6
 	$Body.material_override = material
+	$KnightRig.set_team_color(color)
 
 
 # --- Camera feel -----------------------------------------------------------
