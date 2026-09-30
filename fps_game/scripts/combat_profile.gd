@@ -27,8 +27,6 @@ extends Resource
 @export_range(0.0, 0.6, 0.01) var anticipation_amount := 0.15
 ## Swing easing. Higher = slow start and a fast, heavy finish.
 @export_range(1.0, 4.0, 0.1) var swing_ease := 2.0
-## Forward step speed during the strike (m/s).
-@export_range(0.0, 6.0, 0.1) var swing_lunge := 1.5
 ## On a miss, the weapon keeps travelling past the end pose.
 @export_range(0.0, 0.8, 0.01) var follow_through_time := 0.3
 @export_range(0.0, 1.0, 0.05) var follow_through_amount := 0.35

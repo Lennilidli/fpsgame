@@ -63,7 +63,7 @@ func _physics_process(delta: float) -> void:
 		Mode.ATTACKER:
 			_update_attacker(delta, to_target.length())
 
-	# Knockback and lunges move the dummy; it then walks back to its spot.
+	# Knockback moves the dummy; it then walks back to its spot.
 	var home_pull := (_home - global_position) * 2.0
 	home_pull.y = 0.0
 	var bonus := combat.movement_bonus()

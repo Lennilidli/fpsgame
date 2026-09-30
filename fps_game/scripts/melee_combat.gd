@@ -205,12 +205,10 @@ func move_multiplier() -> float:
 	return 1.0
 
 
-## Extra velocity from knockback and the swing lunge, to add on top of movement.
+## Extra velocity from being hit (knockback), to add on top of movement.
+## Swinging itself never moves the body.
 func movement_bonus() -> Vector3:
-	var bonus := knockback
-	if state == State.SWING and not _impact_done and _timer >= _t(profile.anticipation_time):
-		bonus += _flat_forward() * profile.swing_lunge
-	return bonus
+	return knockback
 
 
 ## World-space blade hitbox as [base, tip].
