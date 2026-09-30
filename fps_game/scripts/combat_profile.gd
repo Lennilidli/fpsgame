@@ -34,19 +34,25 @@ extends Resource
 @export_range(0.05, 1.5, 0.01) var recover_time := 0.4
 
 @export_group("Impact")
-## Freeze frames when a swing hits flesh.
-@export_range(0.0, 0.3, 0.005) var hit_stop := 0.08
+## Freeze frames when a swing hits flesh. Scaled by the attack's damage and charge, so a
+## full overhead freezes longer than a quick side slash.
+@export_range(0.0, 0.3, 0.005) var hit_stop := 0.09
+## After a hit the blade keeps cutting this fraction of its remaining swing before it
+## stops (the "bite"), so hits sink in instead of tapping.
+@export_range(0.0, 0.6, 0.01) var hit_bite := 0.15
+@export_range(0.01, 0.2, 0.01) var hit_bite_time := 0.05
 ## How far the weapon rebounds toward the backswing after a hit.
-@export_range(0.0, 1.0, 0.05) var hit_bounce_amount := 0.35
+@export_range(0.0, 1.0, 0.05) var hit_bounce_amount := 0.25
 @export_range(0.05, 1.0, 0.01) var hit_bounce_time := 0.25
 ## If on, the swing cuts through the target instead of bouncing off.
 @export var hit_passes_through := false
 ## Freeze frames when a swing is blocked.
-@export_range(0.0, 0.3, 0.005) var block_stop := 0.12
-@export_range(0.0, 1.0, 0.05) var block_bounce_amount := 0.6
-@export_range(0.05, 1.0, 0.01) var block_bounce_time := 0.35
-## Extra time the attacker is locked after being blocked.
-@export_range(0.0, 1.5, 0.05) var blocked_recoil := 0.4
+@export_range(0.0, 0.3, 0.005) var block_stop := 0.1
+@export_range(0.0, 1.0, 0.05) var block_bounce_amount := 0.5
+## How fast a blocked blade is knocked back. Short = crisp deflection.
+@export_range(0.05, 1.0, 0.01) var block_bounce_time := 0.15
+## Stun after being blocked: the deflected blade holds still this long before returning.
+@export_range(0.0, 1.5, 0.05) var blocked_recoil := 0.25
 ## Swings bounce off walls and props.
 @export var world_collision := true
 @export_range(0.0, 1.0, 0.05) var world_bounce_amount := 0.5
@@ -89,13 +95,23 @@ extends Resource
 ## Camera roll/pitch that follows your swing (degrees).
 @export_range(0.0, 10.0, 0.1) var swing_camera_roll := 2.5
 @export_range(0.0, 0.3, 0.005) var hit_camera_shake := 0.05
+## Camera jolt in the swing's direction when your hit lands (degrees).
+@export_range(0.0, 8.0, 0.1) var hit_camera_kick := 2.0
 @export_range(0.0, 0.3, 0.005) var block_camera_shake := 0.03
 
 @export_group("Hitboxes")
 ## Thickness of the blade hitbox (m). Hits land when the blade comes this close to a body.
 @export_range(0.01, 0.3, 0.01) var blade_radius := 0.08
-## Extra forgiveness for blade-on-blade contact, so blocks catch reliably (m).
-@export_range(0.0, 0.6, 0.01) var block_contact_bonus := 0.25
+## Only the outer blade deals hits: from this fraction of its length to the tip. The part
+## near the hilt passes over targets, so overheads come down onto the head instead of
+## clipping it early. Guards still catch the whole blade.
+@export_range(0.0, 0.9, 0.05) var edge_start := 0.45
+## Extra forgiveness for blade-on-blade contact (m). Higher = blocks catch more reliably but
+## the blade stops visibly short of the guard.
+@export_range(0.0, 0.6, 0.01) var block_contact_bonus := 0.1
+## A correct guard also catches a blade that only brushes past within this distance (m),
+## at its closest point. Too low and some blows slip past the guard to the body.
+@export_range(0.1, 1.0, 0.05) var guard_catch_distance := 0.35
 ## If on, any blade-on-blade contact blocks, even when the block direction is wrong.
 ## Off = MO2 style: only a correct-direction guard stops the blade.
 @export var physical_blocks := false

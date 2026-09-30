@@ -37,7 +37,7 @@ const POSES := {
 	"idle": [Vector3(0.3, -0.35, -0.45), Vector3(-10, 0, 0)],
 	"windup_overhead": [Vector3(0.2, -0.05, -0.5), Vector3(20, 0, 0)],
 	"swing_overhead": [Vector3(0.05, -0.45, -0.6), Vector3(-120, 0, 0)],
-	"windup_thrust": [Vector3(0.25, -0.3, 0.25), Vector3(-80, 8, 0)],
+	"windup_thrust": [Vector3(0.25, -0.3, 0.4), Vector3(-80, 8, 0)],
 	"swing_thrust": [Vector3(0.05, -0.2, -0.7), Vector3(-88, 0, 0)],
 	"windup_left": [Vector3(-0.35, -0.15, -0.45), Vector3(0, 15, 60)],
 	"swing_left": [Vector3(0.4, -0.25, -0.55), Vector3(0, -160, 80)],
@@ -50,7 +50,7 @@ const POSES := {
 	"stagger": [Vector3(0.45, -0.6, -0.2), Vector3(10, 0, -40)],
 	# Blade drawn back close to the body; used after a block so the recovery doesn't
 	# sweep through the opponent's guard.
-	"retract": [Vector3(0.3, -0.3, -0.15), Vector3(15, 0, 0)],
+	"retract": [Vector3(0.32, -0.28, -0.32), Vector3(10, 0, 0)],
 }
 
 ## Blade span along the weapon's local +Y, used for wall collision and sparks.
@@ -59,16 +59,14 @@ const BLADE_TIP := 0.95
 ## Sub-steps per physics frame when sweeping the blade, so fast swings can't skip
 ## through a thin blade or body.
 const HITBOX_SUBSTEPS := 4
-## A correct guard catches a blade that passes within this distance (m), at its closest point.
-const GUARD_CATCH_DISTANCE := 0.6
 
 @export var profile: CombatProfile
 @export var team := 0
 @export var weapon: Node3D
 @export var glow_on_windup := false ## Make the blade glow while attacking (enemy telegraph).
-## Scales the blade hitbox about the weapon's parent. The first-person sword sits close to
-## the camera, so the player scales it up; scaling about the camera keeps the hitbox exactly
-## behind the blade on screen while giving it real reach.
+## Lengthens the blade hitbox beyond the visible blade (the hand stays where it is). The
+## first-person sword is small and close to the camera, so the player needs a longer
+## hitbox for real reach; it lies on the same line as the blade on screen.
 @export var hitbox_scale := 1.0
 @export var immortal := false ## Health refills instead of dying (training).
 @export var infinite_stamina := false
@@ -185,6 +183,35 @@ func time_to_impact() -> float:
 	return _impact_time - _timer
 
 
+## Hit-stop for the current swing: heavier attacks and fuller charges freeze longer.
+func current_hit_stop() -> float:
+	var weight: float = profile.attack(attack_dir)["damage"] * lerpf(0.8, 1.2, last_swing_charge)
+	return _t(profile.hit_stop * weight)
+
+
+## Visual flinch for a body mesh struck by an attack from `dir`: squash on overheads,
+## rock back on thrusts, tilt away from side hits. Returns the tween (kill it to cancel).
+static func play_hit_react(mesh: Node3D, dir: Dir, strength: float) -> Tween:
+	var tilt := Vector3.ZERO
+	var squash := Vector3.ONE
+	match dir:
+		Dir.OVERHEAD:
+			squash = Vector3(1.0 + 0.08 * strength, 1.0 - 0.14 * strength, 1.0 + 0.08 * strength)
+			tilt.x = deg_to_rad(-8.0 * strength)
+		Dir.THRUST:
+			tilt.x = deg_to_rad(10.0 * strength)
+		Dir.LEFT:
+			tilt.z = deg_to_rad(10.0 * strength)
+		Dir.RIGHT:
+			tilt.z = deg_to_rad(-10.0 * strength)
+	var tween := mesh.create_tween().set_parallel()
+	tween.tween_property(mesh, "rotation", tilt, 0.05).set_ease(Tween.EASE_OUT)
+	tween.tween_property(mesh, "scale", squash, 0.05).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(mesh, "rotation", Vector3.ZERO, 0.45).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(mesh, "scale", Vector3.ONE, 0.45).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	return tween
+
+
 ## Max turn speed in radians/s for the current state, or 0 for unlimited.
 func turn_cap() -> float:
 	match state:
@@ -211,10 +238,10 @@ func move_multiplier() -> float:
 
 ## World-space blade hitbox as [base, tip].
 func hitbox_segment() -> Array:
-	var origin: Vector3 = weapon.get_parent().global_position
+	var hand := weapon.global_position
 	var base := _blade_point(0.0)
 	var tip := _blade_point(1.0)
-	return [origin + (base - origin) * hitbox_scale, origin + (tip - origin) * hitbox_scale]
+	return [hand + (base - hand) * hitbox_scale, hand + (tip - hand) * hitbox_scale]
 
 
 ## Body hurtbox as [bottom, top, radius] from the body's capsule, or [] if unavailable.
@@ -457,7 +484,7 @@ func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float, blade_contac
 				result = Result.BLOCKED
 	else:
 		result = Result.HIT
-		_freeze = _t(impact.hit_stop)
+		_freeze = attacker.current_hit_stop() + attacker._t(impact.hit_bite_time)
 		_take_damage(damage)
 		if state != State.SWING:
 			_stagger(profile.flinch_time)
@@ -555,7 +582,7 @@ func _sweep_hitbox() -> bool:
 			var previous: float = _guard_distance.get(other, INF)
 			_guard_distance[other] = distance
 			var touching := distance <= profile.blade_radius * 2.0 + profile.block_contact_bonus
-			var passed_closest := distance > previous and previous <= GUARD_CATCH_DISTANCE
+			var passed_closest := distance > previous and previous <= profile.guard_catch_distance
 			if touching or passed_closest:
 				return _on_contact(other, true, points[0].lerp(points[1], 0.5))
 		if _stop_hitting:
@@ -566,7 +593,8 @@ func _sweep_hitbox() -> bool:
 			var hurt := other.hurtbox()
 			if hurt.is_empty():
 				continue
-			var points := Geometry3D.get_closest_points_between_segments(a, b, hurt[0], hurt[1])
+			var edge := a.lerp(b, profile.edge_start)
+			var points := Geometry3D.get_closest_points_between_segments(edge, b, hurt[0], hurt[1])
 			if points[0].distance_to(points[1]) <= hurt[2] + profile.blade_radius:
 				if _on_contact(other, false, points[0]):
 					return true
@@ -590,25 +618,33 @@ func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3) -> bo
 			_freeze = _t(profile.block_stop)
 			_set_state(State.STAGGER, _t(profile.parry_stagger))
 			_play([
-				_seg(_bounce_pose(profile.block_bounce_amount), profile.block_bounce_time, Ease.OUT, 2.5),
+				_seg(_bounce_pose(profile.block_bounce_amount), profile.block_bounce_time, Ease.OUT, 3.0),
 				_seg(POSES["stagger"], 0.2, Ease.IN_OUT),
 			])
 			return true
 		Result.BLOCKED:
 			_spawn_spark(point)
 			_freeze = _t(profile.block_stop)
+			# Knocked back fast, drawn in close to the body, held there as the stun.
 			_recover([
-				_seg(_bounce_pose(profile.block_bounce_amount), profile.block_bounce_time, Ease.OUT, 2.5),
-				_seg(POSES["retract"], maxf(profile.blocked_recoil, 0.15), Ease.IN_OUT),
-			], 0.0)
+				_seg(_bounce_pose(profile.block_bounce_amount), profile.block_bounce_time, Ease.OUT, 3.0),
+				_seg(POSES["retract"], 0.15, Ease.OUT, 2.0),
+			], profile.blocked_recoil)
 			return true
 	# HIT or GUARD_BREAK
 	_victims.append(target)
-	_freeze = _t(profile.hit_stop)
 	if profile.hit_passes_through:
+		_freeze = current_hit_stop()
 		_stop_hitting = not profile.attack(attack_dir)["cleave"]
 		return false
-	_bounce(profile.hit_bounce_amount, profile.hit_bounce_time, 0.0)
+	# Bite into the target, hold for the hit-stop, then rebound and recover.
+	var bite := _mix(_current_pose(), _swing_pose(), profile.hit_bite)
+	var back := _mix(bite, _windup_pose(1.0), profile.hit_bounce_amount)
+	_recover([
+		_seg(bite, profile.hit_bite_time, Ease.OUT, 2.0),
+		{"pose": bite, "time": current_hit_stop(), "ease": Ease.LINEAR, "power": 1.0},
+		_seg(back, profile.hit_bounce_time, Ease.OUT, 2.5),
+	], 0.0)
 	return true
 
 

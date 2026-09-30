@@ -150,8 +150,30 @@ func _on_attack_resolved(result: MeleeCombat.Result, _target: MeleeCombat) -> vo
 	match result:
 		MeleeCombat.Result.HIT, MeleeCombat.Result.GUARD_BREAK:
 			_shake_camera(combat.profile.hit_camera_shake)
+			_kick_camera(combat.attack_dir)
 		MeleeCombat.Result.BLOCKED, MeleeCombat.Result.PARRIED:
 			_shake_camera(combat.profile.block_camera_shake)
+
+
+## Jolts the view in the swing's direction when a hit lands, on top of the swing lean.
+func _kick_camera(dir: MeleeCombat.Dir) -> void:
+	var kick := deg_to_rad(combat.profile.hit_camera_kick)
+	var offset := Vector3.ZERO
+	match dir:
+		MeleeCombat.Dir.LEFT:
+			offset.z = -kick
+		MeleeCombat.Dir.RIGHT:
+			offset.z = kick
+		MeleeCombat.Dir.OVERHEAD:
+			offset.x = -kick
+		MeleeCombat.Dir.THRUST:
+			offset.x = -kick * 0.4
+	if _camera_tween:
+		_camera_tween.kill()
+	_camera_tween = create_tween()
+	_camera_tween.tween_property(camera, "rotation", camera.rotation + offset, 0.04).set_ease(Tween.EASE_OUT)
+	_camera_tween.tween_interval(combat.current_hit_stop())
+	_camera_tween.tween_property(camera, "rotation", Vector3.ZERO, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 
 
 func _on_defended(result: MeleeCombat.Result, _attacker: MeleeCombat) -> void:

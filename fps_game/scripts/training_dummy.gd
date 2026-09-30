@@ -20,6 +20,7 @@ var target: Node3D
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material: StandardMaterial3D
 var _base_color: Color
+var _react_tween: Tween
 var _feedback_tween: Tween
 var _timer := 0.0
 var _hold := 0.0
@@ -153,6 +154,7 @@ func _on_defended(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
 	match result:
 		MeleeCombat.Result.HIT:
 			_flash()
+			_hit_react(attacker)
 			_show_feedback("%d" % roundi(damage), Color.WHITE)
 		MeleeCombat.Result.BLOCKED:
 			_show_feedback("BLOCKED", Color(0.5, 0.75, 1.0))
@@ -160,6 +162,7 @@ func _on_defended(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
 			_show_feedback("PARRIED", Color(1.0, 0.35, 0.3))
 		MeleeCombat.Result.GUARD_BREAK:
 			_flash()
+			_hit_react(attacker)
 			_show_feedback("GUARD BREAK %d" % roundi(damage * 0.5), Color(1.0, 0.8, 0.2))
 
 
@@ -172,6 +175,12 @@ func _on_attack_resolved(result: MeleeCombat.Result, _target: MeleeCombat) -> vo
 			_show_feedback("you PARRIED!", Color(1.0, 0.85, 0.2))
 		MeleeCombat.Result.HIT:
 			_show_feedback("hit you", Color(1.0, 0.4, 0.4))
+
+
+func _hit_react(attacker: MeleeCombat) -> void:
+	if _react_tween:
+		_react_tween.kill()
+	_react_tween = MeleeCombat.play_hit_react(body_mesh, attacker.attack_dir, clampf(attacker.last_swing_damage / 30.0, 0.6, 1.5))
 
 
 func _flash() -> void:

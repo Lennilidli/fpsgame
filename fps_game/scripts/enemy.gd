@@ -28,6 +28,7 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _target_combat: MeleeCombat
 var _material: StandardMaterial3D
 var _base_color: Color
+var _react_tween: Tween
 var _repath_timer := 0.0
 var _strafe_sign := 1.0
 var _strafe_timer := 0.0
@@ -241,13 +242,19 @@ func _chase_direction(delta: float, to_target: Vector3) -> Vector3:
 
 # --- Reactions -------------------------------------------------------------
 
-func _on_defended(result: MeleeCombat.Result, _attacker: MeleeCombat) -> void:
+func _on_defended(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
 	if result == MeleeCombat.Result.HIT or result == MeleeCombat.Result.GUARD_BREAK:
 		_material.albedo_color = Color.WHITE
 		create_tween().tween_property(_material, "albedo_color", _base_color, 0.15)
+		if _react_tween:
+			_react_tween.kill()
+		_react_tween = MeleeCombat.play_hit_react(body_mesh, attacker.attack_dir, clampf(attacker.last_swing_damage / 30.0, 0.6, 1.5))
 
 
 func _on_died() -> void:
+	if _react_tween:
+		_react_tween.kill()
+	body_mesh.rotation = Vector3.ZERO
 	velocity = Vector3.ZERO
 	collision_shape.set_deferred("disabled", true)
 	died.emit(self)
