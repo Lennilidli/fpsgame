@@ -25,6 +25,7 @@ const COLOR_THREAT_COVERED := Color(0.3, 1.0, 0.4)
 @onready var kills_label: Label = $KillsLabel
 @onready var message_label: Label = $MessageLabel
 @onready var result_label: Label = $ResultLabel
+@onready var riposte_label: Label = $RiposteLabel
 @onready var damage_flash: ColorRect = $DamageFlash
 @onready var pause_panel: Control = $PausePanel
 @onready var game_over_panel: Control = $GameOverPanel
@@ -95,6 +96,11 @@ func _process(_delta: float) -> void:
 	if _player == null or _game_over:
 		return
 	_update_dir_indicator()
+	# Riposte ready after a parry: pulse until the counter swing is released or it expires.
+	var riposte: bool = _player.combat.has_riposte()
+	riposte_label.visible = riposte
+	if riposte:
+		riposte_label.modulate.a = 0.6 + 0.4 * sin(Time.get_ticks_msec() * 0.02)
 
 
 func _update_dir_indicator() -> void:
@@ -234,6 +240,8 @@ func _any_panel_open() -> bool:
 func _log_attack(result: MeleeCombat.Result, _target: MeleeCombat) -> void:
 	var combat: MeleeCombat = _player.combat
 	var swing := "%s  charge %d%%" % [MeleeCombat.DIR_NAMES[combat.attack_dir].capitalize(), roundi(combat.last_swing_charge * 100.0)]
+	if combat.last_swing_riposte:
+		swing += "  RIPOSTE"
 	match result:
 		MeleeCombat.Result.MISS:
 			_log("%s  -> miss" % swing)

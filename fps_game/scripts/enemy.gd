@@ -247,6 +247,9 @@ func _on_defended(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
 		_material.albedo_color = Color.WHITE
 		create_tween().tween_property(_material, "albedo_color", _base_color, 0.15)
 		rig.hit_react(attacker.attack_dir, clampf(attacker.last_swing_damage / 30.0, 0.6, 1.5))
+	elif result == MeleeCombat.Result.PARRIED:
+		# Punish with a riposte: counter-attack right away.
+		_attack_timer = 0.0
 
 
 func _on_died() -> void:

@@ -28,6 +28,8 @@ signal world_hit(point: Vector3)
 ## Emitted on the defender when it is struck.
 signal defended(result: Result, attacker: MeleeCombat)
 signal died
+## A riposte (full-damage counter after a parry) became available or was used up/lost.
+signal riposte_changed(active: bool)
 ## Emitted by the fighter that resolved a contact (the network host), with everything
 ## needed to replay it elsewhere via apply_contact().
 signal contact_decided(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float)
@@ -93,6 +95,9 @@ var body: Node3D
 ## Info about the most recent exchange, for training feedback.
 var last_swing_damage := 0.0
 var last_swing_charge := 0.0
+var last_swing_riposte := false ## The last swing was a riposte.
+## The current windup carries a riposte (started inside the window after a parry).
+var riposte_armed := false
 var last_block_age := -1.0 ## How long the block had been up when last hit (-1 if not blocking).
 ## Action waiting in the input buffer until the current one finishes.
 var queued := Queued.NONE
@@ -114,6 +119,7 @@ var _victims: Array[MeleeCombat] = []
 var _stop_hitting := false
 var _queued_released := false ## The queued attack was a tap (button already released).
 var _queued_age := 0.0
+var _riposte_timer := 0.0 ## Time left to start a riposte windup after a parry.
 var _guard_distance := {} ## Blade-to-guard distance per defender this swing.
 var _hurt_shape: CollisionShape3D
 var _anim_queue: Array[Dictionary] = []
@@ -294,8 +300,17 @@ func start_windup(dir: Dir) -> bool:
 	attack_dir = dir
 	_release_requested = false
 	_set_state(State.WINDUP)
+	# A windup started inside the riposte window carries the riposte (through feints too).
+	if _riposte_timer > 0.0:
+		_riposte_timer = 0.0
+		riposte_armed = true
 	_play([_seg(_windup_pose(profile.backswing_amount), profile.windup_time, Ease.OUT, profile.windup_ease)])
 	return true
+
+
+## A riposte is available (window open) or carried by the current windup.
+func has_riposte() -> bool:
+	return _riposte_timer > 0.0 or riposte_armed
 
 
 func release_attack() -> void:
@@ -475,6 +490,9 @@ func reset() -> void:
 	stamina = max_stamina
 	_freeze = 0.0
 	_clear_queue()
+	_riposte_timer = 0.0
+	riposte_armed = false
+	riposte_changed.emit(false)
 	_set_state(State.IDLE)
 	_anim_queue.clear()
 	_segment = {}
@@ -520,6 +538,10 @@ func apply_defense(attacker: MeleeCombat, result: Result, damage: float) -> void
 	var impact := attacker.profile
 	last_block_age = _block_time if state == State.BLOCK else -1.0
 	match result:
+		Result.PARRIED:
+			_riposte_timer = _t(profile.riposte_window)
+			if _riposte_timer > 0.0:
+				riposte_changed.emit(true)
 		Result.BLOCKED:
 			_spend(damage * profile.block_cost_ratio)
 			_freeze = _t(impact.block_stop)
@@ -539,6 +561,10 @@ func apply_defense(attacker: MeleeCombat, result: Result, damage: float) -> void
 # --- State machine ---------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
+	if _riposte_timer > 0.0:
+		_riposte_timer -= delta
+		if _riposte_timer <= 0.0 and not riposte_armed:
+			riposte_changed.emit(false)
 	if _freeze > 0.0:
 		_freeze -= delta
 		return
@@ -575,8 +601,15 @@ func _physics_process(delta: float) -> void:
 func _begin_swing() -> void:
 	var atk := profile.attack(attack_dir)
 	_spend(atk["stamina"])
-	last_swing_charge = charge()
+	# A riposte always hits as if fully charged; releasing the swing uses it up.
+	last_swing_riposte = riposte_armed
+	if riposte_armed:
+		riposte_armed = false
+		riposte_changed.emit(false)
+	last_swing_charge = 1.0 if last_swing_riposte else charge()
 	_swing_damage = base_damage * atk["damage"] * lerpf(profile.charge_min_damage, 1.0, last_swing_charge)
+	if last_swing_riposte:
+		_swing_damage *= profile.riposte_damage
 	last_swing_damage = _swing_damage
 	_impact_done = false
 	_stop_hitting = false
@@ -785,6 +818,10 @@ func _regen_stamina(delta: float) -> void:
 
 
 func _set_state(new_state: State, duration := 0.0) -> void:
+	# Leaving the windup any way other than swinging (cancel, block, stagger) loses the riposte.
+	if riposte_armed and new_state != State.WINDUP and new_state != State.SWING:
+		riposte_armed = false
+		riposte_changed.emit(false)
 	state = new_state
 	_timer = 0.0
 	_state_duration = duration

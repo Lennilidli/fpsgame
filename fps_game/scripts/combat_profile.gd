@@ -68,6 +68,12 @@ extends Resource
 @export_range(0.03, 0.5, 0.01) var block_raise_time := 0.15
 ## Stamina lost per point of blocked damage.
 @export_range(0.0, 2.0, 0.05) var block_cost_ratio := 0.8
+## After a successful parry, a counter-attack whose windup starts within this many
+## seconds deals full-charge damage however briefly it is held. One swing per parry;
+## redirect feints keep it, cancelling into a block loses it.
+@export_range(0.0, 3.0, 0.05) var riposte_window := 1.0
+## Damage multiplier on the riposte swing, on top of full charge.
+@export_range(0.5, 3.0, 0.05) var riposte_damage := 1.0
 
 @export_group("Input buffer")
 ## How long a tapped attack waits for the current action to finish (s). The default

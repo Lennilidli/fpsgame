@@ -64,6 +64,23 @@ polygon = PackedVector2Array(-46, 0, -32, -11, -32, 11)
 [node name="Right" type="Polygon2D" parent="DirIndicator"]
 polygon = PackedVector2Array(46, 0, 32, -11, 32, 11)
 
+[node name="RiposteLabel" type="Label" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 100.0
+offset_right = 200.0
+offset_bottom = 130.0
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "RIPOSTE READY - full damage counter"
+horizontal_alignment = 1
+
 [node name="ResultLabel" type="Label" parent="."]
 anchor_left = 0.5
 anchor_top = 0.5
