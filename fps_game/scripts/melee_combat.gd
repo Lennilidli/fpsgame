@@ -83,8 +83,6 @@ var state := State.IDLE
 var attack_dir := Dir.OVERHEAD
 var block_dir := Dir.OVERHEAD
 var body: Node3D
-## Push applied by hits; bodies add this to their velocity.
-var knockback := Vector3.ZERO
 ## Info about the most recent exchange, for training feedback.
 var last_swing_damage := 0.0
 var last_swing_charge := 0.0
@@ -203,12 +201,6 @@ func move_multiplier() -> float:
 		State.STAGGER:
 			return 0.3
 	return 1.0
-
-
-## Extra velocity from being hit (knockback), to add on top of movement.
-## Swinging itself never moves the body.
-func movement_bonus() -> Vector3:
-	return knockback
 
 
 ## World-space blade hitbox as [base, tip].
@@ -350,9 +342,6 @@ func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float, blade_contac
 		return Result.MISS
 
 	var impact := attacker.profile
-	var to_attacker := attacker.body.global_position - body.global_position
-	to_attacker.y = 0.0
-	var push := -to_attacker.normalized() if to_attacker.length() > 0.01 else Vector3.ZERO
 	var guarded := state == State.BLOCK and is_facing(attacker) \
 		and (blade_contact or block_dir == required_block(dir))
 
@@ -364,7 +353,6 @@ func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float, blade_contac
 		else:
 			_spend(damage * profile.block_cost_ratio)
 			_freeze = _t(impact.block_stop)
-			knockback = push * impact.hit_knockback * 0.4
 			if stamina <= 0.0:
 				result = Result.GUARD_BREAK
 				_take_damage(damage * 0.5)
@@ -374,7 +362,6 @@ func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float, blade_contac
 	else:
 		result = Result.HIT
 		_freeze = _t(impact.hit_stop)
-		knockback = push * impact.hit_knockback
 		_take_damage(damage)
 		if state != State.SWING:
 			_stagger(profile.flinch_time)
@@ -386,7 +373,6 @@ func receive_attack(attacker: MeleeCombat, dir: Dir, damage: float, blade_contac
 # --- State machine ---------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
-	knockback = knockback.move_toward(Vector3.ZERO, 10.0 * delta)
 	if _freeze > 0.0:
 		_freeze -= delta
 		return

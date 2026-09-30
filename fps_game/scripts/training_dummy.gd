@@ -1,6 +1,6 @@
 extends CharacterBody3D
-## Stationary training dummy. It never dies, turns to face the player, drifts back to
-## its spot after knockback, and shows floating feedback for every exchange.
+## Stationary training dummy. It never dies, turns to face the player and shows
+## floating feedback for every exchange.
 ## Behaviour settings are read live from `settings` (the training controller).
 
 enum Mode { PASSIVE, BLOCKER, ATTACKER }
@@ -18,7 +18,6 @@ var target: Node3D
 @onready var feedback: Label3D = $Feedback
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
-var _home: Vector3
 var _material: StandardMaterial3D
 var _base_color: Color
 var _feedback_tween: Tween
@@ -35,7 +34,6 @@ var _pattern_index := 0
 func _ready() -> void:
 	add_to_group("enemies")
 	add_to_group("dummies")
-	_home = global_position
 	combat.immortal = true
 	_material = body_mesh.get_active_material(0).duplicate()
 	body_mesh.material_override = _material
@@ -63,12 +61,8 @@ func _physics_process(delta: float) -> void:
 		Mode.ATTACKER:
 			_update_attacker(delta, to_target.length())
 
-	# Knockback moves the dummy; it then walks back to its spot.
-	var home_pull := (_home - global_position) * 2.0
-	home_pull.y = 0.0
-	var bonus := combat.movement_bonus()
-	velocity.x = home_pull.x + bonus.x
-	velocity.z = home_pull.z + bonus.z
+	velocity.x = 0.0
+	velocity.z = 0.0
 	move_and_slide()
 
 

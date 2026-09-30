@@ -50,8 +50,6 @@ extends Resource
 ## Swings bounce off walls and props.
 @export var world_collision := true
 @export_range(0.0, 1.0, 0.05) var world_bounce_amount := 0.5
-## How hard a hit pushes the target (m/s).
-@export_range(0.0, 6.0, 0.1) var hit_knockback := 2.5
 
 @export_group("Defense")
 ## A block raised this recently when hit counts as a parry.

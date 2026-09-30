@@ -28,7 +28,6 @@ var is_dead: bool:
 
 var _aim := Vector2.ZERO
 var _look := Vector2.ZERO ## Mouse look waiting to be applied (radians).
-var _move_velocity := Vector3.ZERO
 var _camera_tween: Tween
 var _shake_tween: Tween
 
@@ -101,10 +100,9 @@ func _physics_process(delta: float) -> void:
 
 	var direction := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	var accel := ground_acceleration if is_on_floor() else air_acceleration
-	_move_velocity = _move_velocity.lerp(direction * speed, clampf(accel * delta, 0.0, 1.0))
-	var bonus := combat.movement_bonus()
-	velocity.x = _move_velocity.x + bonus.x
-	velocity.z = _move_velocity.z + bonus.z
+	var weight := clampf(accel * delta, 0.0, 1.0)
+	velocity.x = lerpf(velocity.x, direction.x * speed, weight)
+	velocity.z = lerpf(velocity.z, direction.z * speed, weight)
 	move_and_slide()
 
 

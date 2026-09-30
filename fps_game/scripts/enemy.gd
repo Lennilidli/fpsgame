@@ -79,9 +79,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		combat.stop_block()
 
-	var bonus := combat.movement_bonus()
-	velocity.x = horizontal.x + bonus.x
-	velocity.z = horizontal.z + bonus.z
+	velocity.x = horizontal.x
+	velocity.z = horizontal.z
 	move_and_slide()
 
 
