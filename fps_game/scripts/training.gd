@@ -20,6 +20,13 @@ extends Node3D
 		if is_node_ready():
 			hud.show_block_hints = value
 
+## Draw blade hitboxes and body hurtboxes.
+@export var show_hitboxes := false:
+	set(value):
+		show_hitboxes = value
+		if is_node_ready():
+			$HitboxDebug.visible = value
+
 @export_group("Attacker dummy")
 @export_enum("Random", "Cycle", "Overhead", "Thrust", "Left", "Right") var attack_pattern := 0
 ## Seconds between the attacker's swings.

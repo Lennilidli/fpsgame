@@ -33,3 +33,4 @@ script = ExtResource("2_combat")
 profile = ExtResource("4_profile")
 weapon = NodePath("../Head/Camera3D/Sword")
 base_damage = 34.0
+hitbox_scale = 1.6

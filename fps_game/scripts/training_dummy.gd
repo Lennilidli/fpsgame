@@ -96,7 +96,8 @@ func _update_blocker(delta: float, distance: float) -> void:
 				_react_timer -= delta
 				if _react_timer <= 0.0:
 					_raise_block(_react_dir)
-				if not _parry_attempted and player_combat.time_to_impact() < 0.12:
+				if not _parry_attempted and player_combat.state == MeleeCombat.State.SWING \
+						and player_combat.blade_distance_to(combat) < 0.7:
 					_parry_attempted = true
 					if randf() < settings.block_parry_chance:
 						combat.refresh_block()

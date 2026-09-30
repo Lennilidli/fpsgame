@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/training_dummy.tscn" id="5_dummy"]
 [ext_resource type="Shader" path="res://shaders/grid_floor.gdshader" id="6_grid"]
 [ext_resource type="NavigationMesh" path="res://scenes/training_navmesh.tres" id="7_navmesh"]
+[ext_resource type="Script" path="res://scripts/hitbox_debug.gd" id="8_hitbox_debug"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.32, 0.46, 0.68, 1)
@@ -192,3 +193,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -13)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 9)
 
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="HitboxDebug" type="MeshInstance3D" parent="."]
+visible = false
+script = ExtResource("8_hitbox_debug")

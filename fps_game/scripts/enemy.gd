@@ -5,7 +5,7 @@ extends CharacterBody3D
 signal died(enemy: Node)
 
 @export var move_speed := 3.2
-@export var engage_distance := 2.1
+@export var engage_distance := 1.9
 @export var max_simultaneous_attackers := 2
 
 @export_group("Skill")
@@ -113,8 +113,9 @@ func _defend(delta: float, distance: float) -> void:
 				combat.set_block_dir(_block_choice)
 			elif combat.state != MeleeCombat.State.SWING:
 				combat.start_block(_block_choice) # Feints our own windup if needed.
-		# Time a parry by re-raising the block right before the hit lands.
-		if not _parry_attempted and _target_combat.time_to_impact() < 0.12:
+		# Time a parry by re-raising the block as the incoming blade closes in.
+		if not _parry_attempted and _target_combat.state == MeleeCombat.State.SWING \
+				and _target_combat.blade_distance_to(combat) < 0.7:
 			_parry_attempted = true
 			if combat.state == MeleeCombat.State.BLOCK and randf() < parry_chance:
 				combat.refresh_block()

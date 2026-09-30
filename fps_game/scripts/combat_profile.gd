@@ -87,34 +87,35 @@ extends Resource
 @export_range(0.0, 0.3, 0.005) var hit_camera_shake := 0.05
 @export_range(0.0, 0.3, 0.005) var block_camera_shake := 0.03
 
-@export_group("Reach")
-@export_range(1.0, 4.0, 0.05) var reach := 2.3
+@export_group("Hitboxes")
+## Thickness of the blade hitbox (m). Hits land when the blade comes this close to a body.
+@export_range(0.01, 0.3, 0.01) var blade_radius := 0.08
+## Extra forgiveness for blade-on-blade contact, so blocks catch reliably (m).
+@export_range(0.0, 0.6, 0.01) var block_contact_bonus := 0.25
+## If on, any blade-on-blade contact blocks, even when the block direction is wrong.
+## Off = MO2 style: only a correct-direction guard stops the blade.
+@export var physical_blocks := false
 
 @export_group("Overhead")
 @export_range(0.1, 1.5, 0.01) var overhead_duration := 0.55
-## Point in the swing motion (0-1) where the hit lands.
+## Point in the swing motion (0-1) where the blade faces forward. Hits come from
+## hitbox contact; this only times AI reactions and the camera lean.
 @export_range(0.1, 1.0, 0.01) var overhead_impact := 0.8
 @export_range(0.1, 3.0, 0.05) var overhead_damage := 1.25
-@export_range(0.0, 1.5, 0.05) var overhead_reach := 0.0
-@export_range(5.0, 180.0, 1.0) var overhead_arc := 40.0
 @export_range(0.0, 50.0, 1.0) var overhead_stamina := 18.0
 
 @export_group("Thrust")
 @export_range(0.1, 1.5, 0.01) var thrust_duration := 0.42
 @export_range(0.1, 1.0, 0.01) var thrust_impact := 0.65
 @export_range(0.1, 3.0, 0.05) var thrust_damage := 0.85
-@export_range(0.0, 1.5, 0.05) var thrust_reach := 0.5
-@export_range(5.0, 180.0, 1.0) var thrust_arc := 25.0
 @export_range(0.0, 50.0, 1.0) var thrust_stamina := 12.0
 
 @export_group("Side swings")
 @export_range(0.1, 1.5, 0.01) var side_duration := 0.5
 @export_range(0.1, 1.0, 0.01) var side_impact := 0.6
 @export_range(0.1, 3.0, 0.05) var side_damage := 1.0
-@export_range(0.0, 1.5, 0.05) var side_reach := 0.0
-@export_range(5.0, 180.0, 1.0) var side_arc := 80.0
 @export_range(0.0, 50.0, 1.0) var side_stamina := 15.0
-## Side swings can hit several enemies in their arc.
+## Side swings can hit several enemies in one sweep (with Hit Passes Through).
 @export var side_cleave := true
 
 
@@ -122,10 +123,7 @@ extends Resource
 func attack(dir: int) -> Dictionary:
 	match dir:
 		0:
-			return {"duration": overhead_duration, "impact": overhead_impact, "damage": overhead_damage,
-				"reach": overhead_reach, "arc": overhead_arc, "stamina": overhead_stamina, "cleave": false}
+			return {"duration": overhead_duration, "impact": overhead_impact, "damage": overhead_damage, "stamina": overhead_stamina, "cleave": false}
 		1:
-			return {"duration": thrust_duration, "impact": thrust_impact, "damage": thrust_damage,
-				"reach": thrust_reach, "arc": thrust_arc, "stamina": thrust_stamina, "cleave": false}
-	return {"duration": side_duration, "impact": side_impact, "damage": side_damage,
-		"reach": side_reach, "arc": side_arc, "stamina": side_stamina, "cleave": side_cleave}
+			return {"duration": thrust_duration, "impact": thrust_impact, "damage": thrust_damage, "stamina": thrust_stamina, "cleave": false}
+	return {"duration": side_duration, "impact": side_impact, "damage": side_damage, "stamina": side_stamina, "cleave": side_cleave}
