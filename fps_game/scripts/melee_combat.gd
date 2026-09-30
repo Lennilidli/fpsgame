@@ -423,9 +423,10 @@ func feint_base_dir() -> Dir:
 	return attack_dir if state == State.WINDUP else queued_dir
 
 
-## Mouse direction changed: a queued block follows it, a queued swing only if enabled.
+## Mouse direction changed: a queued swing follows it only if enabled. Blocks never
+## follow the mouse; their direction is fixed when block is pressed.
 func update_queued_dir(dir: Dir) -> void:
-	if queued == Queued.BLOCK or (queued == Queued.WINDUP and profile.buffer_follows_mouse):
+	if queued == Queued.WINDUP and profile.buffer_follows_mouse:
 		queued_dir = dir
 
 

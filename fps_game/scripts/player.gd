@@ -118,7 +118,7 @@ func _apply_combat_input(action: String, dir: int) -> void:
 		"unblock":
 			combat.queue_block_release()
 		"aim":
-			combat.set_block_dir(d)
+			# A raised block keeps its direction (MO2): only re-pressing block re-aims it.
 			combat.update_queued_dir(d)
 
 

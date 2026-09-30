@@ -147,7 +147,7 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
 text = "Move mouse to pick a direction
 Hold LMB to wind up, release to swing
-Hold RMB to block (block where the blade is)
+Press RMB to block where the blade is (re-press to change)
 8 while winding up = feint to another direction
 RMB during a windup = cancel into block
 Red arrow = incoming attack, block there
