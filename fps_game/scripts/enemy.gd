@@ -79,8 +79,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		combat.stop_block()
 
-	velocity.x = horizontal.x
-	velocity.z = horizontal.z
+	var bonus := combat.movement_bonus()
+	velocity.x = horizontal.x + bonus.x
+	velocity.z = horizontal.z + bonus.z
 	move_and_slide()
 
 
@@ -144,7 +145,8 @@ func _attack(delta: float, distance: float) -> void:
 	if distance > engage_distance + 0.5 or not _attack_slot_free():
 		return
 	if combat.start_windup(_choose_attack_dir()):
-		_hold_time = randf_range(0.35, 0.9)
+		var p := combat.profile
+		_hold_time = randf_range(p.min_windup, p.full_charge_time) / p.combat_speed
 		_feint_next = randf() < feint_chance
 		_attack_timer = _hold_time + randf_range(attack_cooldown.x, attack_cooldown.y)
 
@@ -178,19 +180,15 @@ func _attack_slot_free() -> bool:
 func _face(to_target: Vector3, delta: float) -> void:
 	if to_target.length() < 0.05:
 		return
-	# Turning is slow mid-swing, so side-stepping a committed attack works.
-	var turn_rate := 2.5 if combat.state == MeleeCombat.State.SWING else 8.0
+	# Same turn caps as the player, so side-stepping a committed attack works.
+	var cap := combat.turn_cap()
+	var turn_rate := cap if cap > 0.0 else 8.0
 	var target_yaw := atan2(-to_target.x, -to_target.z)
 	rotation.y = rotate_toward(rotation.y, target_yaw, turn_rate * delta)
 
 
 func _movement(delta: float, to_target: Vector3, distance: float) -> Vector3:
-	var speed := move_speed
-	match combat.state:
-		MeleeCombat.State.WINDUP, MeleeCombat.State.BLOCK:
-			speed *= 0.5
-		MeleeCombat.State.SWING, MeleeCombat.State.STAGGER:
-			speed *= 0.2
+	var speed := move_speed * combat.move_multiplier()
 
 	var direction: Vector3
 	if distance > engage_distance:

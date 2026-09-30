@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/enemy.gd" id="1_enemy"]
 [ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
 [ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
+[ext_resource type="Resource" path="res://combat/sword_profile.tres" id="4_profile"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -60,6 +61,7 @@ radius = 0.5
 
 [node name="MeleeCombat" type="Node" parent="." node_paths=PackedStringArray("weapon")]
 script = ExtResource("2_combat")
+profile = ExtResource("4_profile")
 team = 1
 weapon = NodePath("../WeaponPivot/Sword")
 glow_on_windup = true

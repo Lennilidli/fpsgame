@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/tuning_panel.gd" id="2_tuning"]
+[ext_resource type="Resource" path="res://combat/sword_profile.tres" id="3_profile"]
 
 [sub_resource type="StyleBoxFlat" id="Style_bar_bg"]
 bg_color = Color(0, 0, 0, 0.55)
@@ -139,7 +141,7 @@ anchor_right = 1.0
 offset_left = -424.0
 offset_top = 16.0
 offset_right = -24.0
-offset_bottom = 120.0
+offset_bottom = 140.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
@@ -147,7 +149,8 @@ text = "Move mouse to pick a direction
 Hold LMB to wind up, release to swing
 Hold RMB to block (block where the blade is)
 RMB during a windup = feint
-Red arrow = incoming attack, block there"
+Red arrow = incoming attack, block there
+F1 = combat tuning panel"
 horizontal_alignment = 2
 
 [node name="MessageLabel" type="Label" parent="."]
@@ -227,3 +230,7 @@ text = "Restart"
 custom_minimum_size = Vector2(0, 44)
 theme_override_font_sizes/font_size = 20
 text = "Quit"
+
+[node name="TuningPanel" type="Control" parent="."]
+script = ExtResource("2_tuning")
+profile = ExtResource("3_profile")

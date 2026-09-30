@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
 [ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
+[ext_resource type="Resource" path="res://combat/sword_profile.tres" id="4_profile"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -29,5 +30,6 @@ near = 0.03
 
 [node name="MeleeCombat" type="Node" parent="." node_paths=PackedStringArray("weapon")]
 script = ExtResource("2_combat")
+profile = ExtResource("4_profile")
 weapon = NodePath("../Head/Camera3D/Sword")
 base_damage = 34.0
