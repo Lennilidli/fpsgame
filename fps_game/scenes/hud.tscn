@@ -141,14 +141,15 @@ anchor_right = 1.0
 offset_left = -424.0
 offset_top = 16.0
 offset_right = -24.0
-offset_bottom = 140.0
+offset_bottom = 160.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
 text = "Move mouse to pick a direction
 Hold LMB to wind up, release to swing
 Hold RMB to block (block where the blade is)
-RMB during a windup = feint
+8 while winding up = feint to another direction
+RMB during a windup = cancel into block
 Red arrow = incoming attack, block there
 F1 = combat tuning panel"
 horizontal_alignment = 2

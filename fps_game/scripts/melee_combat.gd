@@ -216,6 +216,31 @@ func feint() -> bool:
 	return true
 
 
+## Redirect feint: abandons the current windup and winds up again toward `dir`.
+## The charge restarts and it costs feint stamina.
+func feint_to(dir: Dir) -> bool:
+	if state != State.WINDUP or dir == attack_dir or stamina <= 0.0:
+		return false
+	_spend(profile.feint_cost)
+	attack_dir = dir
+	_release_requested = false
+	_set_state(State.WINDUP)
+	_play([_seg(_windup_pose(profile.backswing_amount), profile.windup_time, Ease.OUT, profile.windup_ease)])
+	return true
+
+
+## The next direction clockwise (overhead, right, thrust, left).
+static func next_dir(dir: Dir) -> Dir:
+	match dir:
+		Dir.OVERHEAD:
+			return Dir.RIGHT
+		Dir.RIGHT:
+			return Dir.THRUST
+		Dir.THRUST:
+			return Dir.LEFT
+	return Dir.OVERHEAD
+
+
 ## Raises (or re-aims) the block. Blocking during a windup feints it.
 func start_block(dir: Dir) -> bool:
 	if state == State.WINDUP:

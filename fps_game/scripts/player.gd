@@ -54,6 +54,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		combat.start_windup(intended_dir)
 	elif event.is_action_released("attack"):
 		combat.release_attack()
+	elif event.is_action_pressed("feint"):
+		# Swing toward the mouse's direction, or the next one clockwise if unchanged.
+		var dir := intended_dir
+		if dir == combat.attack_dir:
+			dir = MeleeCombat.next_dir(dir)
+		combat.feint_to(dir)
 	elif event.is_action_pressed("block"):
 		combat.start_block(intended_dir)
 	elif event.is_action_released("block"):

@@ -133,9 +133,12 @@ func _attack(delta: float, distance: float) -> void:
 		_hold_time -= delta
 		if _hold_time <= 0.0:
 			if _feint_next:
+				# Redirect into another direction and hold again.
 				_feint_next = false
-				combat.feint()
-				_attack_timer = randf_range(0.2, 0.5)
+				var others := MeleeCombat.Dir.values().filter(func(d): return d != combat.attack_dir)
+				combat.feint_to(others.pick_random())
+				var p := combat.profile
+				_hold_time = randf_range(p.min_windup, p.full_charge_time) / p.combat_speed
 			else:
 				combat.release_attack()
 		return
