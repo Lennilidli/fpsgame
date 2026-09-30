@@ -1,0 +1,13 @@
+# Godot 4 editor cache and import data (regenerated automatically)
+.godot/
+*.tmp
+
+# Exports
+/export/
+*.pck
+*.exe
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
