@@ -1,0 +1,217 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="Style_bar_bg"]
+bg_color = Color(0, 0, 0, 0.55)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_bar_fill"]
+bg_color = Color(0.85, 0.2, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="DamageFlash" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.8, 0, 0, 0)
+
+[node name="Crosshair" type="Control" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+pivot_offset = Vector2(10, 10)
+mouse_filter = 2
+
+[node name="Top" type="ColorRect" parent="Crosshair"]
+offset_left = 9.0
+offset_right = 11.0
+offset_bottom = 6.0
+mouse_filter = 2
+
+[node name="Bottom" type="ColorRect" parent="Crosshair"]
+offset_left = 9.0
+offset_top = 14.0
+offset_right = 11.0
+offset_bottom = 20.0
+mouse_filter = 2
+
+[node name="Left" type="ColorRect" parent="Crosshair"]
+offset_top = 9.0
+offset_right = 6.0
+offset_bottom = 11.0
+mouse_filter = 2
+
+[node name="Right" type="ColorRect" parent="Crosshair"]
+offset_left = 14.0
+offset_top = 9.0
+offset_right = 20.0
+offset_bottom = 11.0
+mouse_filter = 2
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -56.0
+offset_right = 324.0
+offset_bottom = -24.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("Style_bar_bg")
+theme_override_styles/fill = SubResource("Style_bar_fill")
+value = 100.0
+show_percentage = false
+
+[node name="HealthLabel" type="Label" parent="HealthBar"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+text = "100 / 100"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AmmoLabel" type="Label" parent="."]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -324.0
+offset_top = -84.0
+offset_right = -24.0
+offset_bottom = -20.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 44
+text = "20 / 100"
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="ReloadLabel" type="Label" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = 28.0
+offset_right = 120.0
+offset_bottom = 56.0
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+text = "RELOADING"
+horizontal_alignment = 1
+
+[node name="WaveLabel" type="Label" parent="."]
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 324.0
+offset_bottom = 52.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+text = "WAVE 0"
+
+[node name="KillsLabel" type="Label" parent="."]
+offset_left = 24.0
+offset_top = 52.0
+offset_right = 324.0
+offset_bottom = 80.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 20
+text = "KILLS 0"
+
+[node name="MessageLabel" type="Label" parent="."]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 110.0
+offset_right = 400.0
+offset_bottom = 170.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+
+[node name="PausePanel" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Box" type="VBoxContainer" parent="PausePanel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -90.0
+offset_right = 140.0
+offset_bottom = 90.0
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="PausePanel/Box"]
+theme_override_font_sizes/font_size = 40
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="Resume" type="Button" parent="PausePanel/Box"]
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 20
+text = "Resume"
+
+[node name="Quit" type="Button" parent="PausePanel/Box"]
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 20
+text = "Quit"
+
+[node name="GameOverPanel" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.25, 0, 0, 0.7)
+
+[node name="Box" type="VBoxContainer" parent="GameOverPanel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -110.0
+offset_right = 200.0
+offset_bottom = 110.0
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="GameOverPanel/Box"]
+theme_override_font_sizes/font_size = 48
+text = "YOU DIED"
+horizontal_alignment = 1
+
+[node name="Stats" type="Label" parent="GameOverPanel/Box"]
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="Restart" type="Button" parent="GameOverPanel/Box"]
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 20
+text = "Restart"
+
+[node name="Quit" type="Button" parent="GameOverPanel/Box"]
+custom_minimum_size = Vector2(0, 44)
+theme_override_font_sizes/font_size = 20
+text = "Quit"
