@@ -9,8 +9,15 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="Style_bar_fill"]
+[sub_resource type="StyleBoxFlat" id="Style_health_fill"]
 bg_color = Color(0.85, 0.2, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_stamina_fill"]
+bg_color = Color(0.3, 0.75, 0.35, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -25,54 +32,60 @@ anchor_bottom = 1.0
 mouse_filter = 2
 color = Color(0.8, 0, 0, 0)
 
-[node name="Crosshair" type="Control" parent="."]
+[node name="Crosshair" type="ColorRect" parent="."]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -10.0
-offset_top = -10.0
-offset_right = 10.0
-offset_bottom = 10.0
-pivot_offset = Vector2(10, 10)
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
 mouse_filter = 2
 
-[node name="Top" type="ColorRect" parent="Crosshair"]
-offset_left = 9.0
-offset_right = 11.0
-offset_bottom = 6.0
+[node name="DirIndicator" type="Control" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 mouse_filter = 2
 
-[node name="Bottom" type="ColorRect" parent="Crosshair"]
-offset_left = 9.0
-offset_top = 14.0
-offset_right = 11.0
-offset_bottom = 20.0
-mouse_filter = 2
+[node name="Overhead" type="Polygon2D" parent="DirIndicator"]
+polygon = PackedVector2Array(0, -46, -11, -32, 11, -32)
 
-[node name="Left" type="ColorRect" parent="Crosshair"]
-offset_top = 9.0
-offset_right = 6.0
-offset_bottom = 11.0
-mouse_filter = 2
+[node name="Thrust" type="Polygon2D" parent="DirIndicator"]
+polygon = PackedVector2Array(0, 46, -11, 32, 11, 32)
 
-[node name="Right" type="ColorRect" parent="Crosshair"]
-offset_left = 14.0
-offset_top = 9.0
-offset_right = 20.0
-offset_bottom = 11.0
-mouse_filter = 2
+[node name="Left" type="Polygon2D" parent="DirIndicator"]
+polygon = PackedVector2Array(-46, 0, -32, -11, -32, 11)
+
+[node name="Right" type="Polygon2D" parent="DirIndicator"]
+polygon = PackedVector2Array(46, 0, 32, -11, 32, 11)
+
+[node name="ResultLabel" type="Label" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 60.0
+offset_right = 200.0
+offset_bottom = 96.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
 
 [node name="HealthBar" type="ProgressBar" parent="."]
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -56.0
+offset_top = -78.0
 offset_right = 324.0
-offset_bottom = -24.0
+offset_bottom = -50.0
 mouse_filter = 2
 theme_override_styles/background = SubResource("Style_bar_bg")
-theme_override_styles/fill = SubResource("Style_bar_fill")
+theme_override_styles/fill = SubResource("Style_health_fill")
 value = 100.0
 show_percentage = false
 
@@ -81,42 +94,23 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "100 / 100"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="AmmoLabel" type="Label" parent="."]
-anchor_left = 1.0
+[node name="StaminaBar" type="ProgressBar" parent="."]
 anchor_top = 1.0
-anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -324.0
-offset_top = -84.0
-offset_right = -24.0
-offset_bottom = -20.0
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 44
-text = "20 / 100"
-horizontal_alignment = 2
-vertical_alignment = 2
-
-[node name="ReloadLabel" type="Label" parent="."]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -120.0
-offset_top = 28.0
-offset_right = 120.0
-offset_bottom = 56.0
-theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 18
-text = "RELOADING"
-horizontal_alignment = 1
+offset_left = 24.0
+offset_top = -44.0
+offset_right = 324.0
+offset_bottom = -24.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("Style_bar_bg")
+theme_override_styles/fill = SubResource("Style_stamina_fill")
+value = 100.0
+show_percentage = false
 
 [node name="WaveLabel" type="Label" parent="."]
 offset_left = 24.0
@@ -137,6 +131,24 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 20
 text = "KILLS 0"
+
+[node name="ControlsLabel" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.75)
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -424.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 120.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "Move mouse to pick a direction
+Hold LMB to wind up, release to swing
+Hold RMB to block (block where the blade is)
+RMB during a windup = feint
+Red arrow = incoming attack, block there"
+horizontal_alignment = 2
 
 [node name="MessageLabel" type="Label" parent="."]
 anchor_left = 0.5

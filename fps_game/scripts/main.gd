@@ -4,13 +4,11 @@ extends Node3D
 ## in the editor and click "Bake NavigationMesh".
 
 @export var enemy_scene: PackedScene
-@export var first_wave_size := 3
-@export var enemies_added_per_wave := 2
-@export var speed_added_per_wave := 0.3
-@export var spawn_interval := 0.6
+@export var first_wave_size := 1
+@export var waves_per_extra_enemy := 2 ## Wave size grows by one every N waves.
+@export var spawn_interval := 1.5
 @export var time_between_waves := 4.0
-@export var wave_clear_heal := 25
-@export var wave_clear_ammo := 40
+@export var wave_clear_heal := 35.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -24,13 +22,14 @@ var _game_over := false
 
 
 func _ready() -> void:
-	player.health_changed.connect(hud.set_health)
-	player.ammo_changed.connect(hud.set_ammo)
-	player.reloading_changed.connect(hud.set_reloading)
-	player.damaged.connect(hud.flash_damage)
-	player.hit_confirmed.connect(hud.show_hit_marker)
-	player.died.connect(_on_player_died)
-	player.emit_state()
+	var combat: MeleeCombat = player.combat
+	combat.health_changed.connect(hud.set_health)
+	combat.stamina_changed.connect(hud.set_stamina)
+	combat.attack_resolved.connect(hud.show_attack_result)
+	combat.defended.connect(hud.show_defense_result)
+	combat.died.connect(_on_player_died)
+	combat.emit_state()
+	hud.bind_player(player)
 	hud.set_kills(kills)
 
 	await get_tree().create_timer(1.5, false).timeout
@@ -45,7 +44,7 @@ func _start_next_wave() -> void:
 	hud.show_message("WAVE %d" % wave)
 
 	_spawning = true
-	var count := first_wave_size + (wave - 1) * enemies_added_per_wave
+	var count := first_wave_size + floori(float(wave - 1) / waves_per_extra_enemy)
 	for i in count:
 		if _game_over:
 			return
@@ -58,7 +57,7 @@ func _start_next_wave() -> void:
 func _spawn_enemy() -> void:
 	var enemy := enemy_scene.instantiate()
 	enemy.target = player
-	enemy.move_speed += (wave - 1) * speed_added_per_wave
+	enemy.apply_difficulty(wave)
 	var point: Node3D = spawn_points.pick_random()
 	enemy.position = point.global_position + Vector3(randf_range(-1.5, 1.5), 0.0, randf_range(-1.5, 1.5))
 	enemy.died.connect(_on_enemy_died)
@@ -76,9 +75,8 @@ func _on_enemy_died(_enemy: Node) -> void:
 func _check_wave_cleared() -> void:
 	if _spawning or _alive > 0 or _game_over:
 		return
-	player.heal(wave_clear_heal)
-	player.add_ammo(wave_clear_ammo)
-	hud.show_message("WAVE CLEARED  +%d HP  +%d AMMO" % [wave_clear_heal, wave_clear_ammo])
+	player.combat.heal(wave_clear_heal)
+	hud.show_message("WAVE CLEARED  +%d HP" % wave_clear_heal)
 	await get_tree().create_timer(time_between_waves, false).timeout
 	_start_next_wave()
 

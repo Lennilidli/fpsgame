@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/enemy.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
+[ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -35,8 +37,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_body")
 
 [node name="Body" type="MeshInstance3D" parent="."]
-mesh = SubResource("CapsuleMesh_body")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_body")
 
 [node name="EyeLeft" type="MeshInstance3D" parent="Body"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 0.5, -0.37)
@@ -46,7 +48,19 @@ mesh = SubResource("BoxMesh_eye")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 0.5, -0.37)
 mesh = SubResource("BoxMesh_eye")
 
+[node name="WeaponPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0)
+
+[node name="Sword" parent="WeaponPivot" instance=ExtResource("3_sword")]
+
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 path_desired_distance = 0.6
 target_desired_distance = 1.0
 radius = 0.5
+
+[node name="MeleeCombat" type="Node" parent="." node_paths=PackedStringArray("weapon")]
+script = ExtResource("2_combat")
+team = 1
+weapon = NodePath("../WeaponPivot/Sword")
+glow_on_windup = true
+base_damage = 22.0
