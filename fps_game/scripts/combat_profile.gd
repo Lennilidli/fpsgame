@@ -63,6 +63,14 @@ extends Resource
 ## Stamina lost per point of blocked damage.
 @export_range(0.0, 2.0, 0.05) var block_cost_ratio := 0.8
 
+@export_group("Input buffer")
+## How long a tapped attack waits for the current action to finish (s). The default
+## covers a whole swing + recovery; lower it for a stricter timing window. Held buttons
+## stay queued until released. 0 = no buffering.
+@export_range(0.0, 3.0, 0.05) var input_buffer_time := 1.5
+## Queued swings take your latest mouse direction instead of the one you pressed with.
+@export var buffer_follows_mouse := false
+
 @export_group("Stamina")
 @export_range(0.0, 80.0, 1.0) var stamina_regen := 25.0
 @export_range(0.0, 3.0, 0.05) var regen_delay := 0.8

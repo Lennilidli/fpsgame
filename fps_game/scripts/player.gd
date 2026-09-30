@@ -49,20 +49,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		_look += event.relative * mouse_sensitivity
 		_aim += event.relative
 		_update_intended_dir()
+	# Inputs go through the combat buffer, so pressing during a swing queues the next action.
 	elif event.is_action_pressed("attack"):
-		combat.start_windup(intended_dir)
+		combat.queue_windup(intended_dir)
 	elif event.is_action_released("attack"):
-		combat.release_attack()
+		combat.queue_release()
 	elif event.is_action_pressed("feint"):
-		# Swing toward the mouse's direction, or the next one clockwise if unchanged.
+		# Redirect toward the mouse's direction, or the next one clockwise if unchanged.
 		var dir := intended_dir
-		if dir == combat.attack_dir:
+		if dir == combat.feint_base_dir():
 			dir = MeleeCombat.next_dir(dir)
-		combat.feint_to(dir)
+		combat.feint_or_redirect(dir)
 	elif event.is_action_pressed("block"):
-		combat.start_block(intended_dir)
+		combat.queue_block(intended_dir)
 	elif event.is_action_released("block"):
-		combat.stop_block()
+		combat.queue_block_release()
 
 
 func _process(delta: float) -> void:
@@ -119,6 +120,7 @@ func _update_intended_dir() -> void:
 	intended_dir = dir
 	intended_dir_changed.emit(dir)
 	combat.set_block_dir(dir)
+	combat.update_queued_dir(dir)
 
 
 # --- Camera feel -----------------------------------------------------------

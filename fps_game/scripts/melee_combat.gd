@@ -15,6 +15,7 @@ enum Dir { OVERHEAD, THRUST, LEFT, RIGHT }
 enum State { IDLE, WINDUP, SWING, RECOVER, BLOCK, STAGGER, DEAD }
 enum Result { MISS, HIT, BLOCKED, PARRIED, GUARD_BREAK }
 enum Ease { LINEAR, IN, OUT, IN_OUT }
+enum Queued { NONE, WINDUP, BLOCK }
 
 signal health_changed(current: float, maximum: float)
 signal stamina_changed(current: float, maximum: float)
@@ -87,6 +88,9 @@ var body: Node3D
 var last_swing_damage := 0.0
 var last_swing_charge := 0.0
 var last_block_age := -1.0 ## How long the block had been up when last hit (-1 if not blocking).
+## Action waiting in the input buffer until the current one finishes.
+var queued := Queued.NONE
+var queued_dir := Dir.OVERHEAD
 var last_contact_blade := false ## Whether this fighter's last swing struck a blade (vs a body).
 
 var _timer := 0.0
@@ -102,6 +106,8 @@ var _freeze := 0.0
 var _last_hitbox: Array = []
 var _victims: Array[MeleeCombat] = []
 var _stop_hitting := false
+var _queued_released := false ## The queued attack was a tap (button already released).
+var _queued_age := 0.0
 var _guard_distance := {} ## Blade-to-guard distance per defender this swing.
 var _hurt_shape: CollisionShape3D
 var _anim_queue: Array[Dictionary] = []
@@ -327,6 +333,96 @@ func stop_block() -> void:
 		_play([_seg(POSES["idle"], 0.15, Ease.IN_OUT)])
 
 
+# --- Input buffer ----------------------------------------------------------
+# Inputs made while busy (swinging, recovering, staggered) are queued and fire as soon
+# as the fighter can act. The newest input replaces an older queued one.
+
+## Starts a windup now, or queues it.
+func queue_windup(dir: Dir) -> void:
+	if start_windup(dir):
+		_clear_queue()
+	elif profile.input_buffer_time > 0.0:
+		queued = Queued.WINDUP
+		queued_dir = dir
+		_queued_released = false
+		_queued_age = 0.0
+
+
+## Attack button released: releases the current windup, or marks a queued one as a tap.
+func queue_release() -> void:
+	if queued == Queued.WINDUP:
+		_queued_released = true
+		_queued_age = 0.0
+	else:
+		release_attack()
+
+
+## Raises a block now (feinting a windup if needed), or queues it.
+func queue_block(dir: Dir) -> void:
+	if start_block(dir):
+		_clear_queue()
+	elif profile.input_buffer_time > 0.0:
+		queued = Queued.BLOCK
+		queued_dir = dir
+
+
+## Block button released: lowers the block and drops a queued one.
+func queue_block_release() -> void:
+	if queued == Queued.BLOCK:
+		_clear_queue()
+	stop_block()
+
+
+## Feint key: redirects the current windup, or the queued one.
+func feint_or_redirect(dir: Dir) -> bool:
+	if state == State.WINDUP:
+		return feint_to(dir)
+	if queued == Queued.WINDUP and dir != queued_dir:
+		queued_dir = dir
+		return true
+	return false
+
+
+## The direction a feint would redirect from: current windup, else the queued one.
+func feint_base_dir() -> Dir:
+	return attack_dir if state == State.WINDUP else queued_dir
+
+
+## Mouse direction changed: a queued block follows it, a queued swing only if enabled.
+func update_queued_dir(dir: Dir) -> void:
+	if queued == Queued.BLOCK or (queued == Queued.WINDUP and profile.buffer_follows_mouse):
+		queued_dir = dir
+
+
+func _process_queue(delta: float) -> void:
+	if queued == Queued.NONE:
+		return
+	if is_dead():
+		_clear_queue()
+		return
+	if queued == Queued.WINDUP and _queued_released:
+		_queued_age += delta
+		if _queued_age > profile.input_buffer_time:
+			_clear_queue()
+			return
+	match queued:
+		Queued.WINDUP:
+			var tap := _queued_released
+			if start_windup(queued_dir):
+				_clear_queue()
+				if tap:
+					release_attack()
+		Queued.BLOCK:
+			if start_block(queued_dir):
+				_clear_queue()
+
+
+func _clear_queue() -> void:
+	queued = Queued.NONE
+	_queued_released = false
+	_queued_age = 0.0
+
+
 func heal(amount: float) -> void:
 	if is_dead():
 		return
@@ -402,6 +498,7 @@ func _physics_process(delta: float) -> void:
 				_play([_seg(POSES["idle"], 0.25, Ease.IN_OUT)])
 		State.BLOCK:
 			_block_time += delta
+	_process_queue(delta)
 	_regen_stamina(delta)
 
 

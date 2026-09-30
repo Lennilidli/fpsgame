@@ -2,8 +2,8 @@ extends CanvasLayer
 ## On-screen UI plus pause and game-over menus. Runs while the tree is paused.
 ##
 ## The direction indicator around the crosshair shows the selected direction (white),
-## a charging attack (yellow), the raised block (blue), and where to block an
-## incoming enemy attack (red, turning green once the block matches).
+## a charging attack (yellow), the raised block (blue), a queued next action (faint
+## yellow/blue), and where to block an incoming enemy attack (red, green once matched).
 
 const COLOR_IDLE := Color(1, 1, 1, 0.18)
 const COLOR_SELECTED := Color(1, 1, 1, 0.75)
@@ -11,6 +11,8 @@ const COLOR_WINDUP := Color(1.0, 0.85, 0.3)
 const COLOR_SWING := Color(1.0, 0.55, 0.15)
 const COLOR_BLOCK := Color(0.4, 0.7, 1.0)
 const COLOR_THREAT := Color(1.0, 0.2, 0.2)
+const COLOR_QUEUED_ATTACK := Color(1.0, 0.85, 0.3, 0.45)
+const COLOR_QUEUED_BLOCK := Color(0.4, 0.7, 1.0, 0.45)
 const COLOR_THREAT_COVERED := Color(0.3, 1.0, 0.4)
 
 @export var show_block_hints := true ## Red arrow showing where to block incoming attacks.
@@ -105,6 +107,12 @@ func _update_dir_indicator() -> void:
 			arrows[combat.block_dir].color = COLOR_BLOCK
 		MeleeCombat.State.IDLE, MeleeCombat.State.RECOVER:
 			arrows[_player.intended_dir].color = COLOR_SELECTED
+
+	# Buffered next action shows as a faint arrow.
+	if combat.queued == MeleeCombat.Queued.WINDUP:
+		arrows[combat.queued_dir].color = COLOR_QUEUED_ATTACK
+	elif combat.queued == MeleeCombat.Queued.BLOCK:
+		arrows[combat.queued_dir].color = COLOR_QUEUED_BLOCK
 
 	if show_block_hints:
 		var threat := _nearest_threat(combat)
