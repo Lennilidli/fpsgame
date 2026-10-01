@@ -30,6 +30,11 @@ extends Resource
 ## On a miss, the weapon keeps travelling past the end pose.
 @export_range(0.0, 0.8, 0.01) var follow_through_time := 0.3
 @export_range(0.0, 1.0, 0.05) var follow_through_amount := 0.35
+## The blade can still hit during the follow-through, so dragging a swing onto a target
+## late (turning into it) connects, as in MO2.
+@export var follow_through_hits := true
+## Damage multiplier for hits that land during the follow-through.
+@export_range(0.0, 1.5, 0.05) var follow_through_damage := 0.8
 ## Time to return to guard after a swing. You can't act during it.
 @export_range(0.05, 1.5, 0.01) var recover_time := 0.4
 

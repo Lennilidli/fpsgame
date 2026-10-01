@@ -133,6 +133,7 @@ var _queued_released := false ## The queued attack was a tap (button already rel
 var _queued_age := 0.0
 var _riposte_timer := 0.0 ## Time left to start a riposte windup after a parry.
 var _hit_weight := 1.0 ## Hit-zone multiplier of the last contact, scales hit-stop.
+var _late_window := 0.0 ## Time left in the follow-through during which the blade can still hit.
 var _guard_distance := {} ## Blade-to-guard distance per defender this swing.
 var _hurt_shape: CollisionShape3D
 var _anim_queue: Array[Dictionary] = []
@@ -607,11 +608,18 @@ func _physics_process(delta: float) -> void:
 			if _timer >= _t(profile.anticipation_time) and _sweep_hitbox():
 				return
 			if state == State.SWING and _timer >= _swing_end_time:
-				if _victims.is_empty():
-					attack_resolved.emit(Result.MISS, null)
 				_follow_through()
+				if _late_window <= 0.0 and _victims.is_empty():
+					attack_resolved.emit(Result.MISS, null)
 		State.RECOVER:
 			_timer += delta
+			# Follow-through: the blade keeps moving and can still connect (dragged swings).
+			if _late_window > 0.0:
+				_late_window -= delta
+				if _sweep_hitbox():
+					return
+				if _late_window <= 0.0 and _victims.is_empty() and not _impact_done:
+					attack_resolved.emit(Result.MISS, null)
 			if _timer >= _state_duration:
 				_set_state(State.IDLE)
 		State.STAGGER:
@@ -723,6 +731,8 @@ func _sweep_hitbox() -> bool:
 ## Returns true if the blade stops (bounce/stagger).
 func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3, damage_mult := 1.0, zones := "") -> bool:
 	var damage := _swing_damage * damage_mult
+	if _late_window > 0.0:
+		damage *= profile.follow_through_damage
 	var result := target.decide_defense(self, attack_dir, damage, blade_contact)
 	if result == Result.MISS:
 		return false
@@ -733,6 +743,7 @@ func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3, damag
 ## Plays out a decided contact on both fighters. Returns true if the blade stops.
 ## Also used by a network guest to replay contacts the host resolved.
 func apply_contact(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float, zones := "") -> bool:
+	_late_window = 0.0
 	last_hit_zones = zones
 	_hit_weight = 1.0
 	if zones != "":
@@ -783,6 +794,8 @@ func apply_contact(target: MeleeCombat, result: Result, blade_contact: bool, poi
 func _follow_through() -> void:
 	var follow := _mix(_windup_pose(1.0), _swing_pose(), 1.0 + profile.follow_through_amount)
 	_recover([_seg(follow, profile.follow_through_time, Ease.OUT, 2.0)], 0.0)
+	if profile.follow_through_hits and not _stop_hitting:
+		_late_window = _t(profile.follow_through_time)
 
 
 ## Weapon rebounds back toward the backswing, optionally holds, then returns to guard.
