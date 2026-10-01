@@ -4,23 +4,10 @@
 [ext_resource type="Script" path="res://scripts/melee_combat.gd" id="2_combat"]
 [ext_resource type="PackedScene" path="res://scenes/sword.tscn" id="3_sword"]
 [ext_resource type="Resource" path="res://combat/sword_profile.tres" id="4_profile"]
-[ext_resource type="Script" path="res://scripts/knight_rig.gd" id="5_knight"]
-[ext_resource type="Script" path="res://scripts/fp_arms.gd" id="6_arms"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
 height = 1.8
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
-radius = 0.4
-height = 1.8
-
-[sub_resource type="StandardMaterial3D" id="Mat_visor"]
-albedo_color = Color(0.1, 0.1, 0.12, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_visor"]
-material = SubResource("Mat_visor")
-size = Vector3(0.45, 0.1, 0.12)
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -31,11 +18,6 @@ script = ExtResource("1_player")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_body")
 
-[node name="Body" type="MeshInstance3D" parent="."]
-visible = false
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("CapsuleMesh_body")
-
 [node name="Head" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
@@ -45,24 +27,6 @@ fov = 80.0
 near = 0.03
 
 [node name="Sword" parent="Head/Camera3D" instance=ExtResource("3_sword")]
-
-[node name="Visor" type="MeshInstance3D" parent="Head"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.33)
-mesh = SubResource("BoxMesh_visor")
-
-[node name="WorldSword" parent="Head" instance=ExtResource("3_sword")]
-visible = false
-transform = Transform3D(1, 0, 0, 0, 2, 0, 0, 0, 1, 0.3, -0.35, -0.45)
-
-[node name="FPArms" type="Node3D" parent="Head/Camera3D" node_paths=PackedStringArray("weapon")]
-script = ExtResource("6_arms")
-weapon = NodePath("../Sword")
-
-[node name="KnightRig" type="Node3D" parent="." node_paths=PackedStringArray("weapon", "look_node")]
-visible = false
-script = ExtResource("5_knight")
-weapon = NodePath("../Head/WorldSword")
-look_node = NodePath("../Head")
 
 [node name="MeleeCombat" type="Node" parent="." node_paths=PackedStringArray("weapon")]
 script = ExtResource("2_combat")

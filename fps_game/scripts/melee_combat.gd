@@ -30,11 +30,6 @@ signal defended(result: Result, attacker: MeleeCombat)
 signal died
 ## A riposte (full-damage counter after a parry) became available or was used up/lost.
 signal riposte_changed(active: bool)
-## Emitted by the fighter that resolved a contact (the network host), with everything
-## needed to replay it elsewhere via apply_contact().
-signal contact_decided(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float, zones: String)
-## Same for a swing glancing off level geometry (replay with apply_world_hit()).
-signal world_contact_decided(point: Vector3)
 
 const DIR_NAMES := ["overhead", "thrust", "left", "right"]
 
@@ -87,9 +82,6 @@ const HITBOX_SUBSTEPS := 4
 @export var hitbox_scale := 1.0
 @export var immortal := false ## Health refills instead of dying (training).
 @export var infinite_stamina := false
-## Whether this simulation detects hits. Off on a network guest: the host detects them
-## and sends the results, which are replayed with apply_contact()/apply_world_hit().
-var resolves_contacts := true
 
 @export_group("Stats")
 @export var max_health := 100.0
@@ -502,33 +494,6 @@ func _clear_queue() -> void:
 	_queued_age = 0.0
 
 
-## Switches which weapon node is animated and used as the hitbox.
-func set_weapon(new_weapon: Node3D, new_hitbox_scale: float) -> void:
-	weapon = new_weapon
-	hitbox_scale = new_hitbox_scale
-	_blade = weapon.get_node_or_null("Blade")
-	_anim_queue.clear()
-	_segment = {}
-	_snap_to(POSES["idle"])
-
-
-## Back to full health and stamina, standing in guard (new round).
-func reset() -> void:
-	health = max_health
-	stamina = max_stamina
-	_freeze = 0.0
-	_clear_queue()
-	_riposte_timer = 0.0
-	riposte_armed = false
-	riposte_changed.emit(false)
-	_set_state(State.IDLE)
-	_anim_queue.clear()
-	_segment = {}
-	if weapon:
-		_snap_to(POSES["idle"])
-	emit_state()
-
-
 func heal(amount: float) -> void:
 	if is_dead():
 		return
@@ -671,8 +636,6 @@ func _begin_swing() -> void:
 ## reacts to the first thing it touches: a raised guard, a body, or level geometry.
 ## Returns true if the swing was stopped.
 func _sweep_hitbox() -> bool:
-	if not resolves_contacts:
-		return false
 	var now := hitbox_segment()
 	var last: Array = _last_hitbox if not _last_hitbox.is_empty() else now
 	_last_hitbox = now
@@ -736,12 +699,10 @@ func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3, damag
 	var result := target.decide_defense(self, attack_dir, damage, blade_contact)
 	if result == Result.MISS:
 		return false
-	contact_decided.emit(target, result, blade_contact, point, damage, zones)
 	return apply_contact(target, result, blade_contact, point, damage, zones)
 
 
 ## Plays out a decided contact on both fighters. Returns true if the blade stops.
-## Also used by a network guest to replay contacts the host resolved.
 func apply_contact(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float, zones := "") -> bool:
 	_late_window = 0.0
 	last_hit_zones = zones
@@ -831,7 +792,6 @@ func _check_world_hit(last_tip: Vector3, tip: Vector3) -> bool:
 		hit = space.intersect_ray(PhysicsRayQueryParameters3D.create(last_tip, tip, 1))
 	if hit.is_empty():
 		return false
-	world_contact_decided.emit(hit["position"])
 	apply_world_hit(hit["position"])
 	return true
 

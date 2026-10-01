@@ -20,9 +20,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -200.0
-offset_top = -200.0
+offset_top = -170.0
 offset_right = 200.0
-offset_bottom = 200.0
+offset_bottom = 170.0
 theme_override_constants/separation = 14
 
 [node name="Title" type="Label" parent="Box"]
@@ -48,11 +48,6 @@ text = "Training Ground"
 custom_minimum_size = Vector2(0, 50)
 theme_override_font_sizes/font_size = 22
 text = "Waves"
-
-[node name="Lan" type="Button" parent="Box"]
-custom_minimum_size = Vector2(0, 50)
-theme_override_font_sizes/font_size = 22
-text = "LAN 1v1 (PvP)"
 
 [node name="Quit" type="Button" parent="Box"]
 custom_minimum_size = Vector2(0, 50)

@@ -31,8 +31,6 @@ const COLOR_THREAT_COVERED := Color(0.3, 1.0, 0.4)
 @onready var game_over_panel: Control = $GameOverPanel
 @onready var game_over_stats: Label = $GameOverPanel/Box/Stats
 @onready var combat_log: Label = $CombatLog
-@onready var score_label: Label = $ScoreLabel
-@onready var opponent_bar: ProgressBar = $OpponentBar
 @onready var arrows := {
 	MeleeCombat.Dir.OVERHEAD: $DirIndicator/Overhead,
 	MeleeCombat.Dir.THRUST: $DirIndicator/Thrust,
@@ -57,8 +55,6 @@ func _ready() -> void:
 	$PausePanel/Box/Quit.pressed.connect(_quit)
 	$GameOverPanel/Box/Restart.pressed.connect(_restart)
 	$GameOverPanel/Box/Quit.pressed.connect(_quit)
-	score_label.hide()
-	opponent_bar.hide()
 	$PausePanel/Box/MainMenu.pressed.connect(_to_main_menu)
 	$GameOverPanel/Box/MainMenu.pressed.connect(_to_main_menu)
 	combat_log.hide()
@@ -303,49 +299,18 @@ func _log(line: String) -> void:
 	combat_log.text = "\n".join(_log_lines)
 
 
-## PvP mode: score and opponent health, no wave info, fixed settings (no tuning
-## panels), no block hints, and Esc opens the menu without pausing the match.
-func enable_pvp() -> void:
-	wave_label.hide()
-	kills_label.hide()
-	score_label.show()
-	opponent_bar.show()
-	show_block_hints = false
-	$TuningPanel.set_target(null)
-	$TuningPanel.hide()
-	$ControlsLabel.text = $ControlsLabel.text.replace("\nF1 = combat tuning panel, F2 = training options", "")
-	$ControlsLabel.text = $ControlsLabel.text.replace("\nRed arrow = incoming attack, block there", "")
-	$PausePanel/Box/MainMenu.text = "Leave Match"
-
-
-func set_score(text: String) -> void:
-	score_label.text = text
-
-
-func set_opponent_health(current: float, maximum: float) -> void:
-	opponent_bar.max_value = maximum
-	opponent_bar.value = current
-
-
 func _quit() -> void:
-	if Net.active:
-		Net.leave()
 	get_tree().quit()
 
 
 func _to_main_menu() -> void:
-	if Net.active:
-		Net.leave("You left the match.")
-		return
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	get_tree().change_scene_to_file("res://scenes/menu.tscn")
 
 
 func _set_paused(paused: bool) -> void:
-	# A network match keeps running; the menu only frees the mouse (which stops input).
-	if not Net.active:
-		get_tree().paused = paused
+	get_tree().paused = paused
 	pause_panel.visible = paused
 	var free_mouse := paused or _any_panel_open()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if free_mouse else Input.MOUSE_MODE_CAPTURED
