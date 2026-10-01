@@ -32,7 +32,7 @@ signal died
 signal riposte_changed(active: bool)
 ## Emitted by the fighter that resolved a contact (the network host), with everything
 ## needed to replay it elsewhere via apply_contact().
-signal contact_decided(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float)
+signal contact_decided(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float, zones: String)
 ## Same for a swing glancing off level geometry (replay with apply_world_hit()).
 signal world_contact_decided(point: Vector3)
 
@@ -46,10 +46,10 @@ const POSES := {
 	"swing_overhead": [Vector3(0.05, -0.45, -0.6), Vector3(-120, 0, 0)],
 	"windup_thrust": [Vector3(0.25, -0.3, 0.4), Vector3(-80, 8, 0)],
 	"swing_thrust": [Vector3(0.05, -0.2, -0.7), Vector3(-88, 0, 0)],
-	"windup_left": [Vector3(-0.35, -0.15, -0.45), Vector3(0, 15, 60)],
-	"swing_left": [Vector3(0.4, -0.25, -0.55), Vector3(0, -160, 80)],
-	"windup_right": [Vector3(0.45, -0.15, -0.45), Vector3(0, -15, -60)],
-	"swing_right": [Vector3(-0.35, -0.25, -0.55), Vector3(0, 160, -80)],
+	"windup_left": [Vector3(-0.35, -0.15, -0.45), Vector3(0, 15, 75)],
+	"swing_left": [Vector3(0.4, -0.25, -0.55), Vector3(0, -160, 95)],
+	"windup_right": [Vector3(0.45, -0.15, -0.45), Vector3(0, -15, -75)],
+	"swing_right": [Vector3(-0.35, -0.25, -0.55), Vector3(0, 160, -95)],
 	"block_overhead": [Vector3(0.35, 0.1, -0.5), Vector3(0, -10, 90)],
 	"block_thrust": [Vector3(0.3, -0.4, -0.5), Vector3(0, 0, 45)],
 	"block_left": [Vector3(-0.35, -0.35, -0.45), Vector3(-10, 0, 0)],
@@ -63,6 +63,16 @@ const POSES := {
 ## Blade span along the weapon's local +Y, used for wall collision and sparks.
 const BLADE_BASE := 0.12
 const BLADE_TIP := 0.95
+## End of the pommel along the weapon's local +Y; the handle zone runs from here to the guard.
+const POMMEL := -0.16
+
+## Body hit zones as [name, bottom y, top y, radius]: vertical capsules measured from the
+## body's origin (feet). Shared by players, enemies and dummies (all ~1.8 m tall).
+const BODY_ZONES := [
+	["head", 1.7, 1.76, 0.11],
+	["torso", 1.05, 1.42, 0.25],
+	["legs", 0.15, 0.75, 0.2],
+]
 ## Sub-steps per physics frame when sweeping the blade, so fast swings can't skip
 ## through a thin blade or body.
 const HITBOX_SUBSTEPS := 4
@@ -96,6 +106,8 @@ var body: Node3D
 var last_swing_damage := 0.0
 var last_swing_charge := 0.0
 var last_swing_riposte := false ## The last swing was a riposte.
+## Zones of the last body hit as "weapon>body" (e.g. "tip>head"); empty for blade contacts.
+var last_hit_zones := ""
 ## The current windup carries a riposte (started inside the window after a parry).
 var riposte_armed := false
 var last_block_age := -1.0 ## How long the block had been up when last hit (-1 if not blocking).
@@ -120,6 +132,7 @@ var _stop_hitting := false
 var _queued_released := false ## The queued attack was a tap (button already released).
 var _queued_age := 0.0
 var _riposte_timer := 0.0 ## Time left to start a riposte windup after a parry.
+var _hit_weight := 1.0 ## Hit-zone multiplier of the last contact, scales hit-stop.
 var _guard_distance := {} ## Blade-to-guard distance per defender this swing.
 var _hurt_shape: CollisionShape3D
 var _anim_queue: Array[Dictionary] = []
@@ -197,10 +210,11 @@ func time_to_impact() -> float:
 	return _impact_time - _timer
 
 
-## Hit-stop for the current swing: heavier attacks and fuller charges freeze longer.
+## Hit-stop for the current swing: heavier attacks, fuller charges and better hit zones
+## (sweet spot, head) freeze longer.
 func current_hit_stop() -> float:
 	var weight: float = profile.attack(attack_dir)["damage"] * lerpf(0.8, 1.2, last_swing_charge)
-	return _t(profile.hit_stop * weight)
+	return _t(profile.hit_stop * weight * _hit_weight)
 
 
 ## Visual flinch for a body mesh struck by an attack from `dir`: squash on overheads,
@@ -258,14 +272,27 @@ func hitbox_segment() -> Array:
 	return [hand + (base - hand) * hitbox_scale, hand + (tip - hand) * hitbox_scale]
 
 
-## Body hurtbox as [bottom, top, radius] from the body's capsule, or [] if unavailable.
-func hurtbox() -> Array:
-	if _hurt_shape == null or _hurt_shape.disabled or not _hurt_shape.shape is CapsuleShape3D:
+## Weapon zones as [name, from, to] fractions along the blade hitbox (0 = guard, 1 = tip);
+## the handle has negative values because it lies below the guard.
+func weapon_zones() -> Array:
+	var handle := (POMMEL - BLADE_BASE) / (BLADE_TIP - BLADE_BASE)
+	return [
+		["handle", handle, 0.0],
+		["forte", 0.0, profile.middle_start],
+		["middle", profile.middle_start, profile.tip_start],
+		["tip", profile.tip_start, 1.0],
+	]
+
+
+## World-space body zones as [name, bottom, top, radius], or [] while the body can't be hit.
+func body_zones() -> Array:
+	if _hurt_shape == null or _hurt_shape.disabled:
 		return []
-	var capsule: CapsuleShape3D = _hurt_shape.shape
-	var half := capsule.height * 0.5 - capsule.radius
-	var t := _hurt_shape.global_transform
-	return [t * Vector3(0.0, -half, 0.0), t * Vector3(0.0, half, 0.0), capsule.radius]
+	var zones := []
+	for zone in BODY_ZONES:
+		zones.append([zone[0], body.global_transform * Vector3(0.0, zone[1], 0.0),
+			body.global_transform * Vector3(0.0, zone[2], 0.0), zone[3]])
+	return zones
 
 
 ## Closest distance between this fighter's blade hitbox and another's.
@@ -665,35 +692,52 @@ func _sweep_hitbox() -> bool:
 				return _on_contact(other, true, points[0].lerp(points[1], 0.5))
 		if _stop_hitting:
 			continue
+		# Every weapon zone against every body zone; the deepest contact wins.
+		var best := {}
+		var best_depth := 0.0
 		for other in opponents:
 			if other in _victims:
 				continue
-			var hurt := other.hurtbox()
-			if hurt.is_empty():
-				continue
-			var edge := a.lerp(b, profile.edge_start)
-			var points := Geometry3D.get_closest_points_between_segments(edge, b, hurt[0], hurt[1])
-			if points[0].distance_to(points[1]) <= hurt[2] + profile.blade_radius:
-				if _on_contact(other, false, points[0]):
-					return true
+			for body_zone in other.body_zones():
+				for weapon_zone in weapon_zones():
+					if profile.weapon_zone_damage(weapon_zone[0]) <= 0.0:
+						continue
+					var from := a + (b - a) * float(weapon_zone[1])
+					var to := a + (b - a) * float(weapon_zone[2])
+					var points := Geometry3D.get_closest_points_between_segments(from, to, body_zone[1], body_zone[2])
+					var depth: float = points[0].distance_to(points[1]) - (body_zone[3] + profile.blade_radius)
+					if depth <= 0.0 and depth < best_depth:
+						best_depth = depth
+						best = {"target": other, "point": points[0], "weapon": weapon_zone[0], "body": body_zone[0]}
+		if not best.is_empty():
+			var mult := profile.weapon_zone_damage(best["weapon"]) * profile.body_zone_damage(best["body"])
+			if _on_contact(best["target"], false, best["point"], mult, "%s>%s" % [best["weapon"], best["body"]]):
+				return true
 
 	if profile.world_collision and _check_world_hit(last[1], now[1]):
 		return true
 	return false
 
 
-## Resolves a contact. Returns true if the blade stops (bounce/stagger).
-func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3) -> bool:
-	var result := target.decide_defense(self, attack_dir, _swing_damage, blade_contact)
+## Resolves a contact. `damage_mult` and `zones` ("weapon>body") come from the hit zones.
+## Returns true if the blade stops (bounce/stagger).
+func _on_contact(target: MeleeCombat, blade_contact: bool, point: Vector3, damage_mult := 1.0, zones := "") -> bool:
+	var damage := _swing_damage * damage_mult
+	var result := target.decide_defense(self, attack_dir, damage, blade_contact)
 	if result == Result.MISS:
 		return false
-	contact_decided.emit(target, result, blade_contact, point, _swing_damage)
-	return apply_contact(target, result, blade_contact, point, _swing_damage)
+	contact_decided.emit(target, result, blade_contact, point, damage, zones)
+	return apply_contact(target, result, blade_contact, point, damage, zones)
 
 
 ## Plays out a decided contact on both fighters. Returns true if the blade stops.
 ## Also used by a network guest to replay contacts the host resolved.
-func apply_contact(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float) -> bool:
+func apply_contact(target: MeleeCombat, result: Result, blade_contact: bool, point: Vector3, damage: float, zones := "") -> bool:
+	last_hit_zones = zones
+	_hit_weight = 1.0
+	if zones != "":
+		var parts := zones.split(">")
+		_hit_weight = clampf(profile.weapon_zone_damage(parts[0]) * profile.body_zone_damage(parts[1]), 0.3, 1.8)
 	target.apply_defense(self, result, damage)
 	last_contact_blade = blade_contact
 	last_swing_damage = damage

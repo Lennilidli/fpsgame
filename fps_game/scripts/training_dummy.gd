@@ -155,7 +155,8 @@ func _on_defended(result: MeleeCombat.Result, attacker: MeleeCombat) -> void:
 		MeleeCombat.Result.HIT:
 			_flash()
 			_hit_react(attacker)
-			_show_feedback("%d" % roundi(damage), Color.WHITE)
+			var zones := attacker.last_hit_zones.to_upper().replace(">", " > ")
+			_show_feedback("%s  %d" % [zones, roundi(damage)], Color(1.0, 0.85, 0.3) if attacker.last_hit_zones.begins_with("tip") else Color.WHITE)
 		MeleeCombat.Result.BLOCKED:
 			_show_feedback("BLOCKED", Color(0.5, 0.75, 1.0))
 		MeleeCombat.Result.PARRIED:

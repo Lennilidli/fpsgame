@@ -173,7 +173,7 @@ func set_kills(kills: int) -> void:
 func show_attack_result(result: MeleeCombat.Result, _target: MeleeCombat) -> void:
 	match result:
 		MeleeCombat.Result.HIT:
-			_show_result("HIT", Color.WHITE)
+			_show_hit_zones(_player.combat.last_hit_zones)
 		MeleeCombat.Result.BLOCKED:
 			_show_result("BLOCKED", Color(0.6, 0.75, 0.9))
 		MeleeCombat.Result.PARRIED:
@@ -213,6 +213,28 @@ func show_game_over(wave: int, kills: int) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
+## Hit feedback by zone: sweet spot and head hits stand out, handle hits read as weak.
+func _show_hit_zones(zones: String) -> void:
+	var parts := zones.split(">")
+	var weapon_zone: String = parts[0] if parts.size() > 1 else ""
+	var body_zone: String = parts[1] if parts.size() > 1 else ""
+	var text := "HIT"
+	var color := Color.WHITE
+	match weapon_zone:
+		"tip":
+			text = "SWEET SPOT"
+			color = Color(1.0, 0.85, 0.3)
+		"handle":
+			text = "WEAK HIT (handle)"
+			color = Color(0.7, 0.7, 0.7)
+		"forte":
+			text = "HIT (close)"
+	if body_zone == "head":
+		text += " - HEAD"
+		color = color.lerp(Color(1.0, 0.35, 0.3), 0.5)
+	_show_result(text, color)
+
+
 func _show_result(text: String, color: Color) -> void:
 	result_label.text = text
 	result_label.modulate = color
@@ -246,7 +268,7 @@ func _log_attack(result: MeleeCombat.Result, _target: MeleeCombat) -> void:
 		MeleeCombat.Result.MISS:
 			_log("%s  -> miss" % swing)
 		MeleeCombat.Result.HIT:
-			_log("%s  -> HIT %d dmg" % [swing, roundi(combat.last_swing_damage)])
+			_log("%s  -> HIT %s %d dmg" % [swing, combat.last_hit_zones.to_upper().replace(">", " -> "), roundi(combat.last_swing_damage)])
 		MeleeCombat.Result.BLOCKED:
 			_log("%s  -> blocked" % swing)
 		MeleeCombat.Result.PARRIED:

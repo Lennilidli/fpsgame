@@ -140,8 +140,8 @@ func _update_score() -> void:
 
 # --- Contacts (host -> guest) -------------------------------------------------
 
-func _send_contact(target: MeleeCombat, result: MeleeCombat.Result, blade_contact: bool, point: Vector3, damage: float, attacker: CharacterBody3D) -> void:
-	_replay_contact.rpc(attacker.name, target.body.name, result, blade_contact, point, damage)
+func _send_contact(target: MeleeCombat, result: MeleeCombat.Result, blade_contact: bool, point: Vector3, damage: float, zones: String, attacker: CharacterBody3D) -> void:
+	_replay_contact.rpc(attacker.name, target.body.name, result, blade_contact, point, damage, zones)
 
 
 func _send_world_hit(point: Vector3, attacker: CharacterBody3D) -> void:
@@ -149,10 +149,10 @@ func _send_world_hit(point: Vector3, attacker: CharacterBody3D) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _replay_contact(attacker_name: String, target_name: String, result: int, blade_contact: bool, point: Vector3, damage: float) -> void:
+func _replay_contact(attacker_name: String, target_name: String, result: int, blade_contact: bool, point: Vector3, damage: float, zones: String) -> void:
 	var attacker: MeleeCombat = $Fighters.get_node(attacker_name).combat
 	var target: MeleeCombat = $Fighters.get_node(target_name).combat
-	attacker.apply_contact(target, result as MeleeCombat.Result, blade_contact, point, damage)
+	attacker.apply_contact(target, result as MeleeCombat.Result, blade_contact, point, damage, zones)
 
 
 @rpc("authority", "call_remote", "reliable")

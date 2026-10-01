@@ -7,7 +7,7 @@ signal status_changed(text: String)
 signal hosts_changed(hosts: Dictionary) ## ip -> host name
 
 ## Bump when anything that affects the match changes; mismatched builds can't connect.
-const PROTOCOL := "meleeproto-1"
+const PROTOCOL := "meleeproto-2"
 const GAME_PORT := 7777
 const DISCOVERY_PORT := 7778
 const PVP_SCENE := "res://scenes/pvp.tscn"

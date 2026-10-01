@@ -108,10 +108,6 @@ extends Resource
 @export_group("Hitboxes")
 ## Thickness of the blade hitbox (m). Hits land when the blade comes this close to a body.
 @export_range(0.01, 0.3, 0.01) var blade_radius := 0.08
-## Only the outer blade deals hits: from this fraction of its length to the tip. The part
-## near the hilt passes over targets, so overheads come down onto the head instead of
-## clipping it early. Guards still catch the whole blade.
-@export_range(0.0, 0.9, 0.05) var edge_start := 0.45
 ## Extra forgiveness for blade-on-blade contact (m). Higher = blocks catch more reliably but
 ## the blade stops visibly short of the guard.
 @export_range(0.0, 0.6, 0.01) var block_contact_bonus := 0.1
@@ -121,6 +117,24 @@ extends Resource
 ## If on, any blade-on-blade contact blocks, even when the block direction is wrong.
 ## Off = MO2 style: only a correct-direction guard stops the blade.
 @export var physical_blocks := false
+
+@export_group("Weapon zones")
+## Where the middle and tip zones begin, as a fraction of the blade (0 = guard, 1 = tip).
+## Below Middle Start is the forte; the handle (pommel to guard) is its own zone.
+@export_range(0.0, 1.0, 0.05) var middle_start := 0.35
+@export_range(0.0, 1.0, 0.05) var tip_start := 0.75
+## Damage multiplier per weapon zone. Hit-stop scales with it too, so sweet-spot hits land
+## heavier and handle hits are a light knock. 0 = that zone never hits.
+@export_range(0.0, 2.0, 0.05) var handle_damage := 0.2
+@export_range(0.0, 2.0, 0.05) var forte_damage := 0.55
+@export_range(0.0, 2.0, 0.05) var middle_damage := 0.85
+@export_range(0.0, 2.0, 0.05) var tip_damage := 1.15
+
+@export_group("Body zones")
+## Damage multiplier per body zone that gets hit.
+@export_range(0.0, 3.0, 0.05) var head_damage := 1.35
+@export_range(0.0, 3.0, 0.05) var torso_damage := 1.0
+@export_range(0.0, 3.0, 0.05) var legs_damage := 0.75
 
 @export_group("Overhead")
 @export_range(0.1, 1.5, 0.01) var overhead_duration := 0.55
@@ -143,6 +157,30 @@ extends Resource
 @export_range(0.0, 50.0, 1.0) var side_stamina := 15.0
 ## Side swings can hit several enemies in one sweep (with Hit Passes Through).
 @export var side_cleave := true
+
+
+## Damage multiplier for a weapon zone ("handle", "forte", "middle", "tip").
+func weapon_zone_damage(zone: String) -> float:
+	match zone:
+		"handle":
+			return handle_damage
+		"forte":
+			return forte_damage
+		"middle":
+			return middle_damage
+		"tip":
+			return tip_damage
+	return 1.0
+
+
+## Damage multiplier for a body zone ("head", "torso", "legs").
+func body_zone_damage(zone: String) -> float:
+	match zone:
+		"head":
+			return head_damage
+		"legs":
+			return legs_damage
+	return torso_damage
 
 
 ## Stats for one attack direction (0 overhead, 1 thrust, 2/3 sides; matches MeleeCombat.Dir).
